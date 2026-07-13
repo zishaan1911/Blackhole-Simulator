@@ -1,0 +1,11 @@
+build/
+build-*/
+cmake-build-*/
+.idea/
+.vs/
+*.o
+*.obj
+*.exe
+*.pdb
+*.ilk
+kerr_*.png
