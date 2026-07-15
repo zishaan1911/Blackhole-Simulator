@@ -125,3 +125,13 @@ typedef ptrdiff_t      GLsizeiptr;
                                                 GLenum, GLenum, void*))                  \
     X(void,               PixelStorei,         (GLenum, GLint))
 
+#define GLAD_MIN_DECLARE(ret, name, args)            \
+    typedef ret(GLAPIENTRY* PFN_gl##name) args;      \
+    extern PFN_gl##name gl##name;
+GLAD_MIN_FUNCTION_LIST(GLAD_MIN_DECLARE)
+#undef GLAD_MIN_DECLARE
+
+typedef void* (*GLADloadproc)(const char* name);
+
+// Returns true when every required entry point was resolved.
+bool gladLoadGLLoader(GLADloadproc load);
