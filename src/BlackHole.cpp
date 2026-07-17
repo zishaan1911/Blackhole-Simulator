@@ -14,3 +14,15 @@ void BlackHole::setSpin(float s)
     spin = std::min(kMaxSpin, std::max(0.0f, s));
 }
 
+float BlackHole::horizonRadius() const
+{
+    const float s = std::min(spin, 0.999999f);
+    return mass * (1.0f + std::sqrt(std::max(0.0f, 1.0f - s * s)));
+}
+
+float BlackHole::innerHorizonRadius() const
+{
+    const float s = std::min(spin, 0.999999f);
+    return mass * (1.0f - std::sqrt(std::max(0.0f, 1.0f - s * s)));
+}
+
