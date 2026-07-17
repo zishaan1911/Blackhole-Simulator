@@ -26,4 +26,15 @@ public:
     float diskBrightness  = 0.50f;
     float diskOpacity     = 0.80f;    // per-crossing opacity of the (thin) disk
 
+    // ---- Derived quantities -------------------------------------------------
+    float a() const { return spin * mass; }              // angular momentum per unit mass
+    float horizonRadius() const;                         // r+ (outer event horizon)
+    float innerHorizonRadius() const;                    // r-
+    float ergosphereRadius(float cosTheta) const;        // static limit surface
+    float photonSphereRadius() const;                    // prograde equatorial photon orbit
+    float iscoRadius() const;                            // prograde ISCO
+    float diskInner() const;
+    float diskOuter() const { return diskOuterRadii * mass; }
+
+    void setSpin(float s);
 };
