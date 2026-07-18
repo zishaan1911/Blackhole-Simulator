@@ -32,3 +32,10 @@ float BlackHole::ergosphereRadius(float cosTheta) const
     return mass * (1.0f + std::sqrt(std::max(0.0f, 1.0f - s * s * cosTheta * cosTheta)));
 }
 
+float BlackHole::photonSphereRadius() const
+{
+    // Prograde equatorial circular photon orbit (Bardeen, Press & Teukolsky 1972).
+    const float s = std::min(spin, 0.999999f);
+    return mass * 2.0f * (1.0f + std::cos((2.0f / 3.0f) * std::acos(-s)));
+}
+
