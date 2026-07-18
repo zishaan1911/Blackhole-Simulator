@@ -26,3 +26,9 @@ float BlackHole::innerHorizonRadius() const
     return mass * (1.0f - std::sqrt(std::max(0.0f, 1.0f - s * s)));
 }
 
+float BlackHole::ergosphereRadius(float cosTheta) const
+{
+    const float s = spin;
+    return mass * (1.0f + std::sqrt(std::max(0.0f, 1.0f - s * s * cosTheta * cosTheta)));
+}
+
