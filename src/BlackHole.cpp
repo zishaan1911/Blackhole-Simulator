@@ -39,3 +39,14 @@ float BlackHole::photonSphereRadius() const
     return mass * 2.0f * (1.0f + std::cos((2.0f / 3.0f) * std::acos(-s)));
 }
 
+float BlackHole::iscoRadius() const
+{
+    // Bardeen, Press & Teukolsky 1972, prograde branch.
+    const float s  = std::min(std::fabs(spin), 0.999999f);
+    const float Z1 = 1.0f + std::cbrt(1.0f - s * s) *
+                                (std::cbrt(1.0f + s) + std::cbrt(1.0f - s));
+    const float Z2 = std::sqrt(3.0f * s * s + Z1 * Z1);
+    const float r  = 3.0f + Z2 - std::sqrt(std::max(0.0f, (3.0f - Z1) * (3.0f + Z1 + 2.0f * Z2)));
+    return r * mass;
+}
+
