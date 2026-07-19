@@ -50,3 +50,9 @@ float BlackHole::iscoRadius() const
     return r * mass;
 }
 
+float BlackHole::diskInner() const
+{
+    if (diskInnerOverride > 0.0f)
+        return std::max(diskInnerOverride, horizonRadius() * 1.05f);
+    return std::max(iscoRadius(), horizonRadius() * 1.05f);
+}
