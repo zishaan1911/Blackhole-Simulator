@@ -24,3 +24,24 @@ void Camera::reset()
     m_pitch    = std::clamp(m_pitch0, -kPitchLimit, kPitchLimit);
 }
 
+void Camera::orbit(float dYaw, float dPitch)
+{
+    m_yaw += dYaw;
+    m_pitch = std::clamp(m_pitch + dPitch, -kPitchLimit, kPitchLimit);
+
+    // keep yaw bounded so it never loses float precision during long sessions
+    const float twoPi = 6.28318530718f;
+    if (m_yaw > twoPi)  m_yaw -= twoPi;
+    if (m_yaw < -twoPi) m_yaw += twoPi;
+}
+
+void Camera::addYaw(float dYaw)
+{
+    orbit(dYaw, 0.0f);
+}
+
+void Camera::zoom(float logFactor)
+{
+    m_distance = std::clamp(m_distance * std::exp(logFactor), minDistance, maxDistance);
+}
+
