@@ -45,3 +45,12 @@ void Camera::zoom(float logFactor)
     m_distance = std::clamp(m_distance * std::exp(logFactor), minDistance, maxDistance);
 }
 
+glm::vec3 Camera::position() const
+{
+    const float cp = std::cos(m_pitch), sp = std::sin(m_pitch);
+    const float cy = std::cos(m_yaw),   sy = std::sin(m_yaw);
+    return glm::vec3(m_distance * cp * cy,
+                     m_distance * cp * sy,
+                     m_distance * sp);
+}
+
