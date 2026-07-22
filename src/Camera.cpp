@@ -54,3 +54,22 @@ glm::vec3 Camera::position() const
                      m_distance * sp);
 }
 
+glm::vec3 Camera::forward() const
+{
+    return glm::normalize(-position());
+}
+
+glm::vec3 Camera::right() const
+{
+    const glm::vec3 worldUp(0.0f, 0.0f, 1.0f);
+    glm::vec3 r = glm::cross(forward(), worldUp);
+    const float len = glm::length(r);
+    if (len < 1e-5f) return glm::vec3(1.0f, 0.0f, 0.0f);
+    return r / len;
+}
+
+glm::vec3 Camera::up() const
+{
+    return glm::normalize(glm::cross(right(), forward()));
+}
+
