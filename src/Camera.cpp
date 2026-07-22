@@ -73,3 +73,7 @@ glm::vec3 Camera::up() const
     return glm::normalize(glm::cross(right(), forward()));
 }
 
+float Camera::tanHalfFovY() const
+{
+    return std::tan(0.5f * m_fovY);
+}
