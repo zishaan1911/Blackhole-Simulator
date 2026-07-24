@@ -10,3 +10,19 @@ void Simulation::update(double realDeltaSeconds)
     m_time += realDeltaSeconds * baseRate * m_speed;
 }
 
+void Simulation::reset()
+{
+    m_time   = 0.0;
+    m_speed  = 1.0;
+    m_paused = false;
+}
+
+void Simulation::togglePause()
+{
+    m_paused = !m_paused;
+}
+
+void Simulation::multiplySpeed(double factor)
+{
+    m_speed = std::clamp(m_speed * factor, minSpeed, maxSpeed);
+}
