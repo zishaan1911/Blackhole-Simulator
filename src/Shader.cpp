@@ -20,3 +20,13 @@ void Shader::destroy()
     m_uniforms.clear();
 }
 
+bool Shader::readFile(const std::string& path, std::string& out)
+{
+    std::ifstream f(path, std::ios::in | std::ios::binary);
+    if (!f) return false;
+    std::ostringstream ss;
+    ss << f.rdbuf();
+    out = ss.str();
+    return true;
+}
+
