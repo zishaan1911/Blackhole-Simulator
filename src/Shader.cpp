@@ -30,3 +30,18 @@ bool Shader::readFile(const std::string& path, std::string& out)
     return true;
 }
 
+std::string Shader::resolvePath(const std::string& relativePath)
+{
+    const std::string candidates[] = {
+        relativePath,
+        "shaders/" + relativePath,
+        "../shaders/" + relativePath,
+        std::string(SHADER_SOURCE_DIR) + "/" + relativePath,
+    };
+    for (const auto& c : candidates) {
+        std::ifstream f(c);
+        if (f.good()) return c;
+    }
+    return relativePath;
+}
+
