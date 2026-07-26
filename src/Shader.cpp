@@ -45,3 +45,25 @@ std::string Shader::resolvePath(const std::string& relativePath)
     return relativePath;
 }
 
+GLuint Shader::compile(GLenum stage, const std::string& src, const std::string& label)
+{
+    GLuint sh = glCreateShader(stage);
+    const char* csrc = src.c_str();
+    GLint len = static_cast<GLint>(src.size());
+    glShaderSource(sh, 1, &csrc, &len);
+    glCompileShader(sh);
+
+    GLint ok = GL_FALSE;
+    glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+    if (!ok) {
+        GLint logLen = 0;
+        glGetShaderiv(sh, GL_INFO_LOG_LENGTH, &logLen);
+        std::vector<char> log(logLen > 1 ? logLen : 1, '\0');
+        glGetShaderInfoLog(sh, logLen, nullptr, log.data());
+        std::fprintf(stderr, "[shader] compile failed (%s):\n%s\n", label.c_str(), log.data());
+        glDeleteShader(sh);
+        return 0;
+    }
+    return sh;
+}
+
