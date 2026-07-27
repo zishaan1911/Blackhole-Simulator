@@ -83,3 +83,37 @@ static bool linkProgram(GLuint prog)
     return true;
 }
 
+bool Shader::loadGraphics(const std::string& vertPath, const std::string& fragPath)
+{
+    const std::string vp = resolvePath(vertPath);
+    const std::string fp = resolvePath(fragPath);
+    std::string vsrc, fsrc;
+    if (!readFile(vp, vsrc) || !readFile(fp, fsrc)) {
+        std::fprintf(stderr, "[shader] cannot open '%s' / '%s'\n", vp.c_str(), fp.c_str());
+        return false;
+    }
+
+    GLuint vs = compile(GL_VERTEX_SHADER, vsrc, vp);
+    if (!vs) return false;
+    GLuint fs = compile(GL_FRAGMENT_SHADER, fsrc, fp);
+    if (!fs) { glDeleteShader(vs); return false; }
+
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, vs);
+    glAttachShader(prog, fs);
+    bool ok = linkProgram(prog);
+    glDetachShader(prog, vs);
+    glDetachShader(prog, fs);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    if (!ok) {
+        glDeleteProgram(prog);
+        return false;
+    }
+
+    destroy();
+    m_program = prog;
+    return true;
+}
+
