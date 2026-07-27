@@ -117,3 +117,8 @@ bool Shader::loadGraphics(const std::string& vertPath, const std::string& fragPa
     return true;
 }
 
+void Shader::use() const
+{
+    glUseProgram(m_program);
+}
+
