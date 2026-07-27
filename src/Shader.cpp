@@ -67,3 +67,19 @@ GLuint Shader::compile(GLenum stage, const std::string& src, const std::string& 
     return sh;
 }
 
+static bool linkProgram(GLuint prog)
+{
+    glLinkProgram(prog);
+    GLint ok = GL_FALSE;
+    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+    if (!ok) {
+        GLint logLen = 0;
+        glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &logLen);
+        std::vector<char> log(logLen > 1 ? logLen : 1, '\0');
+        glGetProgramInfoLog(prog, logLen, nullptr, log.data());
+        std::fprintf(stderr, "[shader] link failed:\n%s\n", log.data());
+        return false;
+    }
+    return true;
+}
+
