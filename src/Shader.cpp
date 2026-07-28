@@ -122,3 +122,16 @@ void Shader::use() const
     glUseProgram(m_program);
 }
 
+GLint Shader::location(const char* name)
+{
+    auto it = m_uniforms.find(name);
+    if (it != m_uniforms.end()) return it->second;
+    GLint loc = glGetUniformLocation(m_program, name);
+    m_uniforms.emplace(name, loc);
+    return loc;
+}
+
+void Shader::set(const char* name, int v)                     { glUniform1i(location(name), v); }
+void Shader::set(const char* name, float v)                   { glUniform1f(location(name), v); }
+void Shader::set(const char* name, float x, float y)          { glUniform2f(location(name), x, y); }
+void Shader::set(const char* name, float x, float y, float z) { glUniform3f(location(name), x, y, z); }
