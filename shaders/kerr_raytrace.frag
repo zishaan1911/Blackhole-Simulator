@@ -23,3 +23,13 @@
 //  Units: G = c = 1, lengths in GM/c^2.
 // =============================================================================
 
+out vec4 FragColour;
+
+// ---- camera -----------------------------------------------------------------
+uniform vec2  uResolution;
+uniform vec3  uCamPos;        // pseudo-Cartesian, +z = spin axis
+uniform vec3  uCamRight;
+uniform vec3  uCamUp;
+uniform vec3  uCamForward;
+uniform float uTanHalfFov;
+
