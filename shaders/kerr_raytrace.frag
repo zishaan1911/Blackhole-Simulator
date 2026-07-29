@@ -33,3 +33,7 @@ uniform vec3  uCamUp;
 uniform vec3  uCamForward;
 uniform float uTanHalfFov;
 
+// ---- black hole -------------------------------------------------------------
+uniform float uM;             // mass
+uniform float uA;             // spin parameter a = (a/M) * M
+
