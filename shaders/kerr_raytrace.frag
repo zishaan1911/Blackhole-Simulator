@@ -37,3 +37,11 @@ uniform float uTanHalfFov;
 uniform float uM;             // mass
 uniform float uA;             // spin parameter a = (a/M) * M
 
+// ---- disk -------------------------------------------------------------------
+uniform float uDiskInner;
+uniform float uDiskOuter;
+uniform float uDiskTemp;
+uniform float uDiskBrightness;
+uniform float uDiskOpacity;
+uniform int   uEnableDisk;
+
