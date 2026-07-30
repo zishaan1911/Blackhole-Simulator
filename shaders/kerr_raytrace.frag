@@ -45,3 +45,11 @@ uniform float uDiskBrightness;
 uniform float uDiskOpacity;
 uniform int   uEnableDisk;
 
+// ---- integration / misc -----------------------------------------------------
+uniform float uTime;          // simulation time, drives disk rotation
+uniform int   uMaxSteps;
+uniform float uStepScale;
+uniform float uEscapeRadius;
+uniform float uHorizonMargin; // where to stop, between r+ (0) and r_photon (1)
+uniform int   uEnableShift;   // gravitational redshift + Doppler + beaming
+
