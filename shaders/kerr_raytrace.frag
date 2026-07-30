@@ -53,3 +53,20 @@ uniform float uEscapeRadius;
 uniform float uHorizonMargin; // where to stop, between r+ (0) and r_photon (1)
 uniform int   uEnableShift;   // gravitational redshift + Doppler + beaming
 
+// ---- temporal accumulation --------------------------------------------------
+uniform vec2  uJitter;        // sub-pixel offset in pixels, for antialiasing
+
+const float PI = 3.141592653589793;
+
+
+// =============================================================================
+//  Inverse Kerr metric (Boyer-Lindquist) and its first derivatives.
+//
+//  Sigma = r^2 + a^2 cos^2 th
+//  Delta = r^2 - 2 M r + a^2
+//  A     = (r^2 + a^2)^2 - a^2 Delta sin^2 th
+//
+//  g^tt = -A/(Sigma Delta)          g^tp = -2 M a r/(Sigma Delta)
+//  g^pp = (Delta - a^2 sin^2 th)/(Sigma Delta sin^2 th)
+//  g^rr = Delta/Sigma               g^thth = 1/Sigma
+// =============================================================================
