@@ -70,3 +70,11 @@ const float PI = 3.141592653589793;
 //  g^pp = (Delta - a^2 sin^2 th)/(Sigma Delta sin^2 th)
 //  g^rr = Delta/Sigma               g^thth = 1/Sigma
 // =============================================================================
+struct IM {
+    float tt;   // g^tt
+    float tp;   // g^t phi
+    float pp;   // g^phi phi
+    float rr;   // g^rr
+    float hh;   // g^th th
+};
+
