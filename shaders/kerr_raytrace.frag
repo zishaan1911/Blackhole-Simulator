@@ -78,3 +78,66 @@ struct IM {
     float hh;   // g^th th
 };
 
+void metricInv(float r, float th, out IM g, out IM dr, out IM dth)
+{
+    float M  = uM;
+    float a  = uA;
+    float a2 = a * a;
+
+    float s = sin(th);
+    float c = cos(th);
+    if (abs(s) < 1e-3) s = (s < 0.0) ? -1e-3 : 1e-3;   // axis regularisation
+    float s2 = s * s;
+
+    float r2 = r * r;
+
+    float Sig    = r2 + a2 * c * c;
+    float dSig_r = 2.0 * r;
+    float dSig_h = -2.0 * a2 * s * c;
+
+    float Del    = r2 - 2.0 * M * r + a2;
+    float dDel_r = 2.0 * r - 2.0 * M;
+
+    float rr_a2 = r2 + a2;
+    float A     = rr_a2 * rr_a2 - a2 * Del * s2;
+    float dA_r  = 4.0 * r * rr_a2 - a2 * dDel_r * s2;
+    float dA_h  = -2.0 * a2 * Del * s * c;
+
+    // f = 1/(Sigma Delta)
+    float f    = 1.0 / (Sig * Del);
+    float f2   = f * f;
+    float df_r = -(dSig_r * Del + Sig * dDel_r) * f2;
+    float df_h = -(dSig_h * Del) * f2;
+
+    // g^tt = -A f
+    g.tt   = -A * f;
+    dr.tt  = -(dA_r * f + A * df_r);
+    dth.tt = -(dA_h * f + A * df_h);
+
+    // g^tp = k r f,  k = -2 M a
+    float k = -2.0 * M * a;
+    g.tp   = k * r * f;
+    dr.tp  = k * (f + r * df_r);
+    dth.tp = k * r * df_h;
+
+    // g^pp = B f  with  B = Delta/sin^2 th - a^2
+    float B    = Del / s2 - a2;
+    float dB_r = dDel_r / s2;
+    float dB_h = -2.0 * Del * c / (s2 * s);
+    g.pp   = B * f;
+    dr.pp  = dB_r * f + B * df_r;
+    dth.pp = dB_h * f + B * df_h;
+
+    // g^rr = Delta/Sigma
+    float invSig  = 1.0 / Sig;
+    float invSig2 = invSig * invSig;
+    g.rr   = Del * invSig;
+    dr.rr  = (dDel_r * Sig - Del * dSig_r) * invSig2;
+    dth.rr = (-Del * dSig_h) * invSig2;
+
+    // g^thth = 1/Sigma
+    g.hh   = invSig;
+    dr.hh  = -dSig_r * invSig2;
+    dth.hh = -dSig_h * invSig2;
+}
+
