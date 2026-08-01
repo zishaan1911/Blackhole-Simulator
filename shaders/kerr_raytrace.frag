@@ -160,3 +160,24 @@ void geodesicRHS(vec3 x, vec2 p, float E, float L, out vec3 dx, out vec2 dp)
                  + gh.rr * p.x * p.x + gh.hh * p.y * p.y);
 }
 
+void rk4Step(inout vec3 x, inout vec2 p, float E, float L, float h)
+{
+    vec3 a1, a2, a3, a4;
+    vec2 b1, b2, b3, b4;
+    geodesicRHS(x,                    p,                    E, L, a1, b1);
+    geodesicRHS(x + (0.5 * h) * a1,   p + (0.5 * h) * b1,   E, L, a2, b2);
+    geodesicRHS(x + (0.5 * h) * a2,   p + (0.5 * h) * b2,   E, L, a3, b3);
+    geodesicRHS(x + h * a3,           p + h * b3,           E, L, a4, b4);
+
+    x += (h / 6.0) * (a1 + 2.0 * a2 + 2.0 * a3 + a4);
+    p += (h / 6.0) * (b1 + 2.0 * b2 + 2.0 * b3 + b4);
+}
+
+// =============================================================================
+//  Coordinate helpers.
+//
+//  Boyer-Lindquist maps onto oblate spheroidal Cartesian coordinates:
+//      x = sqrt(r^2+a^2) sin th cos ph
+//      y = sqrt(r^2+a^2) sin th sin ph
+//      z = r cos th
+// =============================================================================
