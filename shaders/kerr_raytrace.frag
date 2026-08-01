@@ -141,3 +141,22 @@ void metricInv(float r, float th, out IM g, out IM dr, out IM dth)
     dth.hh = -dSig_h * invSig2;
 }
 
+// Hamilton's equations. x = (r, th, phi), p = (p_r, p_th).
+void geodesicRHS(vec3 x, vec2 p, float E, float L, out vec3 dx, out vec2 dp)
+{
+    IM g, gr, gh;
+    metricInv(x.x, x.y, g, gr, gh);
+
+    float pt = -E;
+    float pf =  L;
+
+    dx.x = g.rr * p.x;                 // dr/dl     = g^rr p_r
+    dx.y = g.hh * p.y;                 // dth/dl    = g^thth p_th
+    dx.z = g.tp * pt + g.pp * pf;      // dphi/dl   = g^tp p_t + g^pp p_phi
+
+    dp.x = -0.5 * (gr.tt * pt * pt + 2.0 * gr.tp * pt * pf + gr.pp * pf * pf
+                 + gr.rr * p.x * p.x + gr.hh * p.y * p.y);
+    dp.y = -0.5 * (gh.tt * pt * pt + 2.0 * gh.tp * pt * pf + gh.pp * pf * pf
+                 + gh.rr * p.x * p.x + gh.hh * p.y * p.y);
+}
+
