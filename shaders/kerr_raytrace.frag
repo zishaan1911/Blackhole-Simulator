@@ -181,3 +181,15 @@ void rk4Step(inout vec3 x, inout vec2 p, float E, float L, float h)
 //      y = sqrt(r^2+a^2) sin th sin ph
 //      z = r cos th
 // =============================================================================
+void toBoyerLindquist(vec3 pos, out float r, out float th, out float ph)
+{
+    float a2   = uA * uA;
+    float rho2 = dot(pos, pos);
+    float t    = rho2 - a2;
+    float r2   = 0.5 * (t + sqrt(max(t * t + 4.0 * a2 * pos.z * pos.z, 0.0)));
+    r  = sqrt(max(r2, 1e-8));
+    th = acos(clamp(pos.z / r, -1.0, 1.0));
+    ph = atan(pos.y, pos.x);
+}
+
+// Columns of the Jacobian d(x,y,z)/d(r,th,ph). They are mutually orthogonal.
