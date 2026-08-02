@@ -206,3 +206,17 @@ void blJacobian(float r, float th, float ph, out vec3 Jr, out vec3 Jh, out vec3 
 // =============================================================================
 //  Noise / colour utilities
 // =============================================================================
+float hash13(vec3 p)
+{
+    p = fract(p * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+vec3 hash33(vec3 p)
+{
+    p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+    p += dot(p, p.yxz + 33.33);
+    return fract((p.xxy + p.yxx) * p.zyx);
+}
+
