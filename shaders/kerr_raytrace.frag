@@ -193,3 +193,16 @@ void toBoyerLindquist(vec3 pos, out float r, out float th, out float ph)
 }
 
 // Columns of the Jacobian d(x,y,z)/d(r,th,ph). They are mutually orthogonal.
+void blJacobian(float r, float th, float ph, out vec3 Jr, out vec3 Jh, out vec3 Jp)
+{
+    float R  = sqrt(r * r + uA * uA);
+    float s  = sin(th), c = cos(th);
+    float cp = cos(ph), sp = sin(ph);
+    Jr = vec3((r / R) * s * cp, (r / R) * s * sp, c);
+    Jh = vec3(R * c * cp,       R * c * sp,      -r * s);
+    Jp = vec3(-R * s * sp,      R * s * cp,       0.0);
+}
+
+// =============================================================================
+//  Noise / colour utilities
+// =============================================================================
