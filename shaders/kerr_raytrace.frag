@@ -252,3 +252,25 @@ float fbm3(vec3 p)
 }
 
 // Planckian locus -> sRGB (Tanner Helland's fit), normalised to [0,1].
+vec3 blackbodyRGB(float T)
+{
+    T = clamp(T, 1000.0, 40000.0);
+    float t = T / 100.0;
+    float r, g, b;
+
+    if (t <= 66.0) r = 255.0;
+    else           r = 329.698727446 * pow(t - 60.0, -0.1332047592);
+
+    if (t <= 66.0) g = 99.4708025861 * log(t) - 161.1195681661;
+    else           g = 288.1221695283 * pow(t - 60.0, -0.0755148492);
+
+    if (t >= 66.0)      b = 255.0;
+    else if (t <= 19.0) b = 0.0;
+    else                b = 138.5177312231 * log(t - 10.0) - 305.0447927307;
+
+    return clamp(vec3(r, g, b) / 255.0, 0.0, 1.0);
+}
+
+// =============================================================================
+//  Background sky (only evaluated for photons that escape to infinity)
+// =============================================================================
