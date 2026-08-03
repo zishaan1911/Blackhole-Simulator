@@ -274,3 +274,49 @@ vec3 blackbodyRGB(float T)
 // =============================================================================
 //  Background sky (only evaluated for photons that escape to infinity)
 // =============================================================================
+vec3 skyColour(vec3 d)
+{
+    vec3 col = vec3(0.0);
+
+    // Three star layers of decreasing brightness / increasing density.
+    for (int k = 0; k < 3; ++k) {
+        float sc = 110.0 * pow(2.3, float(k));
+        vec3  p  = d * sc;
+        vec3  ip = floor(p);
+        vec3  fp = fract(p) - 0.5;
+
+        vec3 h1 = hash33(ip + float(k) * 19.7);
+        float threshold = 0.955 - 0.020 * float(k);
+        if (h1.x > threshold) {
+            vec3  centre = (hash33(ip + 7.31 + float(k) * 3.1) - 0.5) * 0.55;
+            float dist   = length(fp - centre);
+            float core   = pow(max(0.0, 1.0 - dist / 0.11), 7.0);
+            float glow   = pow(max(0.0, 1.0 - dist / 0.34), 3.0) * 0.12;
+            float mag    = pow(h1.y, 3.0);
+            vec3  tint   = mix(vec3(0.62, 0.74, 1.0), vec3(1.0, 0.82, 0.58), h1.z);
+            col += tint * (core + glow) * mag * (2.2 - 0.55 * float(k));
+        }
+    }
+
+    // A faint tilted galactic band so lensing has some large-scale structure.
+    vec3  axis = normalize(vec3(0.34, 0.62, 0.71));
+    float t    = dot(d, axis);
+    float band = exp(-t * t * 14.0);
+    float neb  = fbm3(d * 5.0) * 0.7 + fbm3(d * 13.0) * 0.3;
+    col += band * neb * vec3(0.055, 0.048, 0.085);
+    col += vec3(0.004, 0.005, 0.010);
+
+    return col;
+}
+
+// =============================================================================
+//  Accretion disk
+//
+//  The emitting gas is on a prograde circular (Keplerian) orbit, so its
+//  four-velocity is u = u^t (d_t + Omega d_phi) with
+//      Omega = sqrt(M) / (r^{3/2} + a sqrt(M)).
+//  The photon's local energy in that frame is -p.u = u^t (E - Omega L), and
+//  because we normalised the photon to unit energy in the camera frame the
+//  full redshift factor (gravitational + Doppler + frame dragging) is just
+//      g = 1 / [ u^t (E - Omega L) ].
+// =============================================================================
