@@ -371,3 +371,39 @@ vec3 sampleDisk(float r, float ph, float E, float L, out float alpha)
 // =============================================================================
 //  Adaptive affine step
 // =============================================================================
+float stepSize(float r, float th, float pth, float L, float rHorizon)
+{
+    // Base rule: large strides far away, short ones near the hole.
+    float h = uStepScale * r / (1.0 + 8.0 * uM / r);
+
+    // Keep the disk crossing well resolved.
+    if (uEnableDisk == 1 && r < uDiskOuter * 1.3)
+        h = min(h, 2.5 * uStepScale);
+
+    // Boyer-Lindquist coordinates are singular on the polar axis, where the
+    // g^{phi phi} ~ 1/sin^2(th) term and its derivative blow up. Limit the
+    // step so theta can only ever approach the axis geometrically instead of
+    // stepping across it. This costs ~15 extra steps for axis-crossing rays
+    // and removes the artefact along the projected spin axis.
+    float s     = max(abs(sin(th)), 1e-3);
+    float Sigma = r * r + uA * uA * cos(th) * cos(th);
+    float dthdl = abs(pth) / Sigma + 1e-9;
+    h = min(h, 0.35 * s / dthdl);
+
+    // Near the axis dphi/dl ~ L/(Sigma sin^2 th) also grows quickly: the photon
+    // whips around the pole. Bound the azimuthal rotation per step so the
+    // outgoing direction stays accurate across the axis.
+    float dphidl = abs(L) / (Sigma * s * s) + 1e-9;
+    h = min(h, 0.25 / dphidl);
+
+    // Boyer-Lindquist is also singular on the horizon itself: p_r diverges as
+    // Delta -> 0. Approach it geometrically so an RK4 stage can never step to
+    // r < r+, where Delta changes sign and the photon would be spat back out.
+    h = min(h, 0.25 * max(r - rHorizon, 1e-4));
+
+    return max(h, 1e-5);
+}
+
+// =============================================================================
+//  Trace one photon
+// =============================================================================
