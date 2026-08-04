@@ -320,3 +320,54 @@ vec3 skyColour(vec3 d)
 //  full redshift factor (gravitational + Doppler + frame dragging) is just
 //      g = 1 / [ u^t (E - Omega L) ].
 // =============================================================================
+vec3 sampleDisk(float r, float ph, float E, float L, out float alpha)
+{
+    alpha = 0.0;
+
+    float M  = uM;
+    float a  = uA;
+    float sM = sqrt(M);
+    float Om = sM / (r * sqrt(r) + a * sM);          // Keplerian angular velocity
+
+    // Equatorial covariant metric components.
+    float r2   = r * r;
+    float g_tt = -(1.0 - 2.0 * M / r);
+    float g_tp = -2.0 * M * a / r;
+    float g_pp = r2 + a * a + 2.0 * M * a * a / r;
+
+    float den = -(g_tt + 2.0 * Om * g_tp + Om * Om * g_pp);
+    float ut  = (den > 1e-6) ? inversesqrt(den) : 0.0;
+
+    float Elocal = ut * (E - Om * L);
+    float g = (Elocal > 1e-5) ? (1.0 / Elocal) : 0.0;
+    if (uEnableShift == 0) g = 1.0;
+    g = clamp(g, 0.0, 6.0);
+
+    // Novikov-Thorne-like radial profile:  F(r) ~ (1 - sqrt(r_in/r)) / r^3
+    float u    = uDiskInner / r;
+    float prof = max(1.0 - sqrt(u), 0.0);
+    float base = u * u * u * prof;                   // peaks at ~0.0634
+    float Tloc = uDiskTemp * pow(max(base, 0.0), 0.25) * 1.995;
+
+    // Turbulent structure, carried around with the gas (co-rotating angle).
+    float ang = ph - Om * uTime;
+    vec3  q   = vec3(cos(ang), sin(ang), 0.0) * (r * 0.55) + vec3(0.0, 0.0, r * 0.85);
+    float n   = fbm3(q);
+    float structure = 0.72 + 0.50 * n + 0.20 * sin(ang * 3.0 - r * 0.85 + n * 5.0);
+    structure = max(structure, 0.0);
+
+    float s     = (r - uDiskInner) / max(uDiskOuter - uDiskInner, 1e-3);
+    float edge  = smoothstep(0.0, 0.09, s) * smoothstep(1.0, 0.72, s);
+
+    float emis = base * 15.8 * structure * edge;     // normalised so peak ~ 1
+    alpha = clamp(uDiskOpacity * structure * edge, 0.0, 1.0);
+
+    // Relativistic beaming: I_obs / I_emit = g^3 for the frequency-integrated
+    // specific intensity ratio used here. The colour is shifted by g as well.
+    vec3 colour = blackbodyRGB(Tloc * g) * emis * (g * g * g) * uDiskBrightness;
+    return colour;
+}
+
+// =============================================================================
+//  Adaptive affine step
+// =============================================================================
