@@ -532,3 +532,21 @@ vec3 acesFilm(vec3 x)
 }
 
 
+void main()
+{
+    // Sub-pixel jitter drives the temporal accumulation: each frame samples a
+    // slightly different point inside the pixel, and the accumulate pass
+    // averages them. Holding the camera still converges to a clean image.
+    vec2 pix = gl_FragCoord.xy + uJitter;
+
+    vec2 uv  = pix / uResolution;
+    vec2 ndc = uv * 2.0 - 1.0;
+    float aspect = uResolution.x / uResolution.y;
+
+    vec3 dir = normalize(uCamForward
+                       + uCamRight * (ndc.x * aspect * uTanHalfFov)
+                       + uCamUp    * (ndc.y * uTanHalfFov));
+
+    // Linear radiance; the present pass tone maps.
+    FragColour = vec4(trace(uCamPos, dir), 1.0);
+}
