@@ -407,3 +407,128 @@ float stepSize(float r, float th, float pth, float L, float rHorizon)
 // =============================================================================
 //  Trace one photon
 // =============================================================================
+vec3 trace(vec3 camPos, vec3 dir)
+{
+    float M  = uM;
+    float a  = uA;
+    float a2 = a * a;
+
+    // --- initial position -----------------------------------------------------
+    float r0, th0, ph0;
+    toBoyerLindquist(camPos, r0, th0, ph0);
+
+    // --- local orthonormal triad at the camera --------------------------------
+    vec3 Jr, Jh, Jp;
+    blJacobian(r0, th0, ph0, Jr, Jh, Jp);
+    vec3 er = normalize(Jr);
+    vec3 eh = normalize(Jh);
+    vec3 ep = normalize(Jp);
+
+    vec3 n = vec3(dot(dir, er), dot(dir, eh), dot(dir, ep));
+    n = normalize(n);
+
+    // --- build the photon four-momentum in the ZAMO frame ---------------------
+    float s   = sin(th0);
+    float c   = cos(th0);
+    float Sig = r0 * r0 + a2 * c * c;
+    float Del = r0 * r0 - 2.0 * M * r0 + a2;
+    float rr_a2 = r0 * r0 + a2;
+    float A   = rr_a2 * rr_a2 - a2 * Del * s * s;
+
+    float alphaLapse = sqrt(max(Sig * Del / A, 1e-12));   // lapse
+    float omegaDrag  = 2.0 * M * a * r0 / A;              // frame dragging
+    float varpi      = max(sqrt(A / Sig) * abs(s), 1e-6); // cylindrical radius
+
+    // p^mu = e_(t) + n_r e_(r) + n_th e_(th) + n_phi e_(phi)
+    float pt_up  = 1.0 / alphaLapse;
+    float pph_up = omegaDrag / alphaLapse + n.z / varpi;
+
+    // Lower indices to get the conserved quantities.
+    float g_tt = -(1.0 - 2.0 * M * r0 / Sig);
+    float g_tp = -2.0 * M * a * r0 * s * s / Sig;
+    float g_pp = A * s * s / Sig;
+
+    float E = -(g_tt * pt_up + g_tp * pph_up);
+    float L =  (g_tp * pt_up + g_pp * pph_up);
+
+    float pr  = sqrt(max(Sig / Del, 0.0)) * n.x;
+    float pth = sqrt(Sig) * n.y;
+
+    // --- integrate ------------------------------------------------------------
+    vec3 x = vec3(r0, th0, ph0);
+    vec2 p = vec2(pr, pth);
+
+    float rHorizon = M + sqrt(max(M * M - a2, 0.0));
+    // Boyer-Lindquist degenerates at the horizon (p_r ~ 1/Delta), so stopping
+    // right at r+ is numerically hopeless in 32-bit floats. Stop part-way
+    // between r+ and the prograde equatorial photon orbit instead: a photon
+    // that gets below the photon shell moving inward is captured regardless,
+    // and this keeps Delta comfortably away from zero.
+    float rPhoton = 2.0 * M * (1.0 + cos((2.0 / 3.0) * acos(clamp(-a / M, -1.0, 1.0))));
+    float rStop   = rHorizon + uHorizonMargin * max(rPhoton - rHorizon, 0.0);
+
+    vec3  colour        = vec3(0.0);
+    float transmittance = 1.0;
+    bool  captured      = false;
+    bool  escaped       = false;
+
+    for (int i = 0; i < uMaxSteps; ++i) {
+        float r = x.x;
+        if (r <= rStop)          { captured = true; break; }
+        if (r >= uEscapeRadius)  { escaped  = true; break; }
+
+        vec3 xPrev = x;
+        float h = stepSize(r, x.y, p.y, L, rHorizon);
+        rk4Step(x, p, E, L, h);
+
+        // Reflect across the polar axis instead of letting theta run away.
+        if (x.y < 0.0)      { x.y = -x.y;            x.z += PI; p.y = -p.y; }
+        else if (x.y > PI)  { x.y = 2.0 * PI - x.y;  x.z += PI; p.y = -p.y; }
+
+        // Equatorial-plane crossing -> possible disk hit.
+        if (uEnableDisk == 1) {
+            float c0 = cos(xPrev.y);
+            float c1 = cos(x.y);
+            if (c0 * c1 < 0.0) {
+                float f    = c0 / (c0 - c1);
+                float rHit = mix(xPrev.x, x.x, f);
+                if (rHit > uDiskInner && rHit < uDiskOuter) {
+                    float phHit = mix(xPrev.z, x.z, f);
+                    float alpha;
+                    vec3  emission = sampleDisk(rHit, phHit, E, L, alpha);
+                    colour += transmittance * emission * alpha;
+                    transmittance *= (1.0 - alpha);
+                    if (transmittance < 0.015) break;
+                }
+            }
+        }
+    }
+
+    if (escaped && transmittance > 0.0) {
+        // Convert the final coordinate velocity back into a Cartesian direction.
+        IM g, gr, gh;
+        metricInv(x.x, x.y, g, gr, gh);
+        float rdot  = g.rr * p.x;
+        float thdot = g.hh * p.y;
+        float phdot = g.tp * (-E) + g.pp * L;
+
+        vec3 Br, Bh, Bp;
+        blJacobian(x.x, x.y, x.z, Br, Bh, Bp);
+        vec3 outDir = normalize(Br * rdot + Bh * thdot + Bp * phdot);
+
+        colour += transmittance * skyColour(outDir);
+    }
+
+    // `captured` (and the "ran out of steps" case) contribute nothing: that is
+    // the black hole shadow.
+    return colour;
+}
+
+// =============================================================================
+vec3 acesFilm(vec3 x)
+{
+    const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+
