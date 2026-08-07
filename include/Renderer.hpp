@@ -32,4 +32,11 @@ public:
     void invalidate() { m_sampleIndex = 0; }
     int  sampleCount() const { return m_sampleIndex; }
 
+    // Renders one high-quality frame off-screen and writes it to `path`.
+    // Independent of the interactive settings, so a slow GPU can still produce
+    // clean stills. Returns false if anything failed (see stderr).
+    bool screenshot(const Camera& cam, const BlackHole& bh, const Simulation& sim,
+                    const std::string& path, int width, int height,
+                    int steps, int samples);
+
 };
