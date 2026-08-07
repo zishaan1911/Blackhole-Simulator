@@ -27,4 +27,9 @@ public:
 
     bool reloadShaders();
 
+    // Discards accumulated samples. Call whenever the image would change:
+    // camera moved, simulation advanced, parameters edited.
+    void invalidate() { m_sampleIndex = 0; }
+    int  sampleCount() const { return m_sampleIndex; }
+
 };
