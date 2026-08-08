@@ -39,4 +39,26 @@ public:
                     const std::string& path, int width, int height,
                     int steps, int samples);
 
+    // ---- Quality knobs ------------------------------------------------------
+    void  setRenderScale(float s);
+    float renderScale() const { return m_renderScale; }
+
+    int   maxSteps     = 320;      // integration steps per photon
+    float stepScale    = 0.25f;    // affine step ~ stepScale * r
+    float escapeRadius = 1000.0f;  // treated as infinity
+    float exposure     = 1.0f;
+    bool  showDisk     = true;
+    bool  enableShift  = true;     // redshift / Doppler / beaming
+    bool  accumulate   = true;
+
+    // Where a photon is declared captured, as a fraction of the gap between the
+    // horizon r+ (0.0) and the prograde photon orbit (1.0). Boyer-Lindquist
+    // coordinates degenerate at r+, so stopping strictly there is numerically
+    // unusable in 32-bit floats. 0.75 leaves the measured shadow size exact to
+    // ~2e-7 while eliminating rays that leak back out of the horizon.
+    float horizonMargin = 0.75f;
+
+    int traceWidth()  const { return m_traceW; }
+    int traceHeight() const { return m_traceH; }
+
 };
