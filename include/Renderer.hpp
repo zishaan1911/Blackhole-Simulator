@@ -61,4 +61,31 @@ public:
     int traceWidth()  const { return m_traceW; }
     int traceHeight() const { return m_traceH; }
 
+private:
+    struct Target {
+        GLuint fbo = 0;
+        GLuint tex = 0;
+    };
+
+    bool  createTarget(Target& t, int w, int h);
+    void  destroyTarget(Target& t);
+    void  setTraceUniforms(const Camera& cam, const BlackHole& bh,
+                           const Simulation& sim, int w, int h,
+                           int steps, float jx, float jy);
+    void  drawFullscreen();
+
+    Shader m_trace;
+    Shader m_accum;
+    Shader m_present;
+
+    Target m_traceTarget;      // this frame's raw trace
+    Target m_accumTarget[2];   // ping-pong accumulator
+    int    m_accumFront = 0;
+
+    GLuint m_vao = 0;
+
+    int   m_fbW = 0, m_fbH = 0;
+    int   m_traceW = 0, m_traceH = 0;
+    float m_renderScale = 0.25f;
+    int   m_sampleIndex = 0;
 };
