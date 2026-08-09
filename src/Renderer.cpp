@@ -39,3 +39,14 @@ bool Renderer::init(int framebufferWidth, int framebufferHeight)
     return m_traceTarget.fbo != 0;
 }
 
+bool Renderer::reloadShaders()
+{
+    // Shader::load* only swaps in the new program once it has linked, so a
+    // failed hot-reload leaves the running programs untouched.
+    if (!m_trace.loadGraphics("fullscreen.vert", "kerr_raytrace.frag")) return false;
+    if (!m_accum.loadGraphics("fullscreen.vert", "accumulate.frag"))    return false;
+    if (!m_present.loadGraphics("fullscreen.vert", "present.frag"))     return false;
+    invalidate();
+    return true;
+}
+
