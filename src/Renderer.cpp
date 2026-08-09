@@ -26,3 +26,16 @@ float halton(int index, int base)
 
 }  // namespace
 
+bool Renderer::init(int framebufferWidth, int framebufferHeight)
+{
+    if (!reloadShaders()) return false;
+
+    glGenVertexArrays(1, &m_vao);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    m_fbW = std::max(1, framebufferWidth);
+    m_fbH = std::max(1, framebufferHeight);
+    resize(m_fbW, m_fbH);
+    return m_traceTarget.fbo != 0;
+}
+
