@@ -61,3 +61,9 @@ void Renderer::shutdown()
     m_present.destroy();
 }
 
+void Renderer::destroyTarget(Target& t)
+{
+    if (t.fbo) { glDeleteFramebuffers(1, &t.fbo); t.fbo = 0; }
+    if (t.tex) { glDeleteTextures(1, &t.tex);     t.tex = 0; }
+}
+
