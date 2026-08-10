@@ -50,3 +50,14 @@ bool Renderer::reloadShaders()
     return true;
 }
 
+void Renderer::shutdown()
+{
+    destroyTarget(m_traceTarget);
+    destroyTarget(m_accumTarget[0]);
+    destroyTarget(m_accumTarget[1]);
+    if (m_vao) { glDeleteVertexArrays(1, &m_vao); m_vao = 0; }
+    m_trace.destroy();
+    m_accum.destroy();
+    m_present.destroy();
+}
+
