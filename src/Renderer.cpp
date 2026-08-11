@@ -100,3 +100,9 @@ bool Renderer::createTarget(Target& t, int w, int h)
     return true;
 }
 
+void Renderer::setRenderScale(float s)
+{
+    m_renderScale = std::clamp(s, 0.05f, 1.0f);
+    resize(m_fbW, m_fbH);
+}
+
