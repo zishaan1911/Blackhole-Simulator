@@ -106,3 +106,20 @@ void Renderer::setRenderScale(float s)
     resize(m_fbW, m_fbH);
 }
 
+void Renderer::resize(int framebufferWidth, int framebufferHeight)
+{
+    m_fbW = std::max(1, framebufferWidth);
+    m_fbH = std::max(1, framebufferHeight);
+
+    const int w = std::max(16, static_cast<int>(m_fbW * m_renderScale));
+    const int h = std::max(16, static_cast<int>(m_fbH * m_renderScale));
+    if (w == m_traceW && h == m_traceH && m_traceTarget.fbo) return;
+
+    m_traceW = w;
+    m_traceH = h;
+    createTarget(m_traceTarget, w, h);
+    createTarget(m_accumTarget[0], w, h);
+    createTarget(m_accumTarget[1], w, h);
+    invalidate();
+}
+
