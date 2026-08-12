@@ -123,3 +123,10 @@ void Renderer::resize(int framebufferWidth, int framebufferHeight)
     invalidate();
 }
 
+void Renderer::drawFullscreen()
+{
+    glBindVertexArray(m_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+}
+
