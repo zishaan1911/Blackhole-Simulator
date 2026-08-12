@@ -130,3 +130,38 @@ void Renderer::drawFullscreen()
     glBindVertexArray(0);
 }
 
+void Renderer::setTraceUniforms(const Camera& cam, const BlackHole& bh,
+                                const Simulation& sim, int w, int h,
+                                int steps, float jx, float jy)
+{
+    const glm::vec3 pos = cam.position();
+    const glm::vec3 fwd = cam.forward();
+    const glm::vec3 rgt = cam.right();
+    const glm::vec3 upv = cam.up();
+
+    m_trace.set("uResolution", static_cast<float>(w), static_cast<float>(h));
+    m_trace.set("uCamPos",     pos.x, pos.y, pos.z);
+    m_trace.set("uCamForward", fwd.x, fwd.y, fwd.z);
+    m_trace.set("uCamRight",   rgt.x, rgt.y, rgt.z);
+    m_trace.set("uCamUp",      upv.x, upv.y, upv.z);
+    m_trace.set("uTanHalfFov", cam.tanHalfFovY());
+
+    m_trace.set("uM", bh.mass);
+    m_trace.set("uA", bh.a());
+
+    m_trace.set("uDiskInner",      bh.diskInner());
+    m_trace.set("uDiskOuter",      bh.diskOuter());
+    m_trace.set("uDiskTemp",       bh.diskTemperature);
+    m_trace.set("uDiskBrightness", bh.diskBrightness);
+    m_trace.set("uDiskOpacity",    bh.diskOpacity);
+    m_trace.set("uEnableDisk",     showDisk ? 1 : 0);
+
+    m_trace.set("uTime",          static_cast<float>(sim.time()));
+    m_trace.set("uMaxSteps",      steps);
+    m_trace.set("uStepScale",     stepScale);
+    m_trace.set("uEscapeRadius",  escapeRadius);
+    m_trace.set("uHorizonMargin", horizonMargin);
+    m_trace.set("uEnableShift",   enableShift ? 1 : 0);
+    m_trace.set("uJitter",        jx, jy);
+}
+
