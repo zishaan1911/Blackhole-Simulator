@@ -165,3 +165,59 @@ void Renderer::setTraceUniforms(const Camera& cam, const BlackHole& bh,
     m_trace.set("uJitter",        jx, jy);
 }
 
+void Renderer::render(const Camera& cam, const BlackHole& bh, const Simulation& sim)
+{
+    if (!m_trace.valid() || !m_accum.valid() || !m_present.valid()) return;
+    if (!m_traceTarget.fbo) return;
+
+    // Once converged there is nothing to add, so stop burning GPU time on a
+    // still camera. The present pass still runs, so the window stays live.
+    const int kMaxSamples = 256;
+    const bool needTrace = !accumulate || m_sampleIndex < kMaxSamples;
+
+    if (needTrace) {
+        // ---- pass 1: trace ---------------------------------------------------
+        float jx = 0.0f, jy = 0.0f;
+        if (accumulate) {
+            jx = halton(m_sampleIndex + 1, 2) - 0.5f;
+            jy = halton(m_sampleIndex + 1, 3) - 0.5f;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m_traceTarget.fbo);
+        glViewport(0, 0, m_traceW, m_traceH);
+        m_trace.use();
+        setTraceUniforms(cam, bh, sim, m_traceW, m_traceH, maxSteps, jx, jy);
+        drawFullscreen();
+
+        // ---- pass 2: accumulate ---------------------------------------------
+        const int dst = 1 - m_accumFront;
+        glBindFramebuffer(GL_FRAMEBUFFER, m_accumTarget[dst].fbo);
+        glViewport(0, 0, m_traceW, m_traceH);
+        m_accum.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_accumTarget[m_accumFront].tex);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_2D, m_traceTarget.tex);
+        m_accum.set("uHistory", 0);
+        m_accum.set("uCurrent", 1);
+        m_accum.set("uSampleIndex", accumulate ? static_cast<float>(m_sampleIndex) : 0.0f);
+        drawFullscreen();
+
+        m_accumFront = dst;
+        ++m_sampleIndex;
+    }
+
+    // ---- pass 3: present ----------------------------------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, m_fbW, m_fbH);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    m_present.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_accumTarget[m_accumFront].tex);
+    m_present.set("uImage", 0);
+    m_present.set("uResolution", static_cast<float>(m_fbW), static_cast<float>(m_fbH));
+    m_present.set("uExposure", exposure);
+    drawFullscreen();
+}
+
