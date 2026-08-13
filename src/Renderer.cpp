@@ -221,3 +221,79 @@ void Renderer::render(const Camera& cam, const BlackHole& bh, const Simulation& 
     drawFullscreen();
 }
 
+bool Renderer::screenshot(const Camera& cam, const BlackHole& bh, const Simulation& sim,
+                          const std::string& path, int width, int height,
+                          int steps, int samples)
+{
+    if (!m_trace.valid() || !m_accum.valid() || !m_present.valid()) return false;
+
+    Target hi, acc[2];
+    if (!createTarget(hi, width, height) ||
+        !createTarget(acc[0], width, height) ||
+        !createTarget(acc[1], width, height)) {
+        destroyTarget(hi); destroyTarget(acc[0]); destroyTarget(acc[1]);
+        std::fprintf(stderr, "[screenshot] could not allocate %dx%d targets\n", width, height);
+        return false;
+    }
+
+    int front = 0;
+    for (int s = 0; s < samples; ++s) {
+        const float jx = halton(s + 1, 2) - 0.5f;
+        const float jy = halton(s + 1, 3) - 0.5f;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, hi.fbo);
+        glViewport(0, 0, width, height);
+        m_trace.use();
+        setTraceUniforms(cam, bh, sim, width, height, steps, jx, jy);
+        drawFullscreen();
+
+        const int dst = 1 - front;
+        glBindFramebuffer(GL_FRAMEBUFFER, acc[dst].fbo);
+        glViewport(0, 0, width, height);
+        m_accum.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, acc[front].tex);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_2D, hi.tex);
+        m_accum.set("uHistory", 0);
+        m_accum.set("uCurrent", 1);
+        m_accum.set("uSampleIndex", static_cast<float>(s));
+        drawFullscreen();
+        front = dst;
+    }
+
+    // Tone map into an 8-bit target we can read back directly.
+    Target ldr;
+    if (!createTarget(ldr, width, height)) {
+        destroyTarget(hi); destroyTarget(acc[0]); destroyTarget(acc[1]);
+        return false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, ldr.fbo);
+    glViewport(0, 0, width, height);
+    m_present.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, acc[front].tex);
+    m_present.set("uImage", 0);
+    m_present.set("uResolution", static_cast<float>(width), static_cast<float>(height));
+    m_present.set("uExposure", exposure);
+    drawFullscreen();
+
+    std::vector<uint8_t> pixels(static_cast<size_t>(width) * height * 3);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    destroyTarget(hi);
+    destroyTarget(acc[0]);
+    destroyTarget(acc[1]);
+    destroyTarget(ldr);
+
+    // GL returns rows bottom-up; PNG wants top-down.
+    const bool ok = writePng(path, width, height, pixels.data(), true);
+    if (ok) std::printf("[screenshot] wrote %s (%dx%d, %d steps, %d samples)\n",
+                        path.c_str(), width, height, steps, samples);
+    else    std::fprintf(stderr, "[screenshot] failed to write %s\n", path.c_str());
+
+    invalidate();
+    return ok;
+}
