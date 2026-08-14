@@ -1,0 +1,36 @@
+#include "PngWriter.hpp"
+
+#include <cstdio>
+#include <cstring>
+#include <vector>
+
+namespace {
+
+// ---------------------------------------------------------------------------
+// PNG needs zlib-wrapped DEFLATE data. Rather than pull in zlib for what is a
+// once-per-keypress screenshot, this emits DEFLATE "stored" (uncompressed)
+// blocks, which are perfectly legal and every decoder accepts. Files come out
+// slightly larger than a compressed encoder would produce, which is a fine
+// trade for having no dependency at all.
+// ---------------------------------------------------------------------------
+
+uint32_t crc32Of(const uint8_t* data, size_t len, uint32_t crc = 0)
+{
+    static uint32_t table[256];
+    static bool built = false;
+    if (!built) {
+        for (uint32_t n = 0; n < 256; ++n) {
+            uint32_t c = n;
+            for (int k = 0; k < 8; ++k)
+                c = (c & 1) ? (0xEDB88320u ^ (c >> 1)) : (c >> 1);
+            table[n] = c;
+        }
+        built = true;
+    }
+    crc = crc ^ 0xFFFFFFFFu;
+    for (size_t i = 0; i < len; ++i)
+        crc = table[(crc ^ data[i]) & 0xFF] ^ (crc >> 8);
+    return crc ^ 0xFFFFFFFFu;
+}
+
+}
