@@ -51,4 +51,18 @@ void push32be(std::vector<uint8_t>& v, uint32_t x)
     v.push_back(uint8_t(x));
 }
 
+void writeChunk(std::vector<uint8_t>& out, const char tag[4],
+                const std::vector<uint8_t>& payload)
+{
+    push32be(out, static_cast<uint32_t>(payload.size()));
+    std::vector<uint8_t> withTag;
+    withTag.reserve(4 + payload.size());
+    withTag.insert(withTag.end(), tag, tag + 4);
+    withTag.insert(withTag.end(), payload.begin(), payload.end());
+    out.insert(out.end(), withTag.begin(), withTag.end());
+    push32be(out, crc32Of(withTag.data(), withTag.size()));
+}
+
+}  // namespace
+
 }
