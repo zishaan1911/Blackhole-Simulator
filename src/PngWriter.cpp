@@ -43,4 +43,12 @@ uint32_t adler32Of(const uint8_t* data, size_t len)
     return (b << 16) | a;
 }
 
+void push32be(std::vector<uint8_t>& v, uint32_t x)
+{
+    v.push_back(uint8_t(x >> 24));
+    v.push_back(uint8_t(x >> 16));
+    v.push_back(uint8_t(x >> 8));
+    v.push_back(uint8_t(x));
+}
+
 }
