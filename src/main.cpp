@@ -68,3 +68,93 @@ App* appFromWindow(GLFWwindow* w)
     return static_cast<App*>(glfwGetWindowUserPointer(w));
 }
 
+void keyCallback(GLFWwindow* window, int key, int, int action, int)
+{
+    if (action != GLFW_PRESS && action != GLFW_REPEAT) return;
+    App* app = appFromWindow(window);
+    if (!app) return;
+
+    switch (key) {
+    case GLFW_KEY_ESCAPE:
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        break;
+
+    case GLFW_KEY_SPACE:
+        if (action == GLFW_PRESS) app->sim.togglePause();
+        break;
+
+    case GLFW_KEY_R:
+        if (action == GLFW_PRESS) {
+            app->camera.reset();
+            app->sim.reset();
+            app->renderer.invalidate();
+        }
+        break;
+
+    case GLFW_KEY_T: app->sim.multiplySpeed(1.25); break;
+    case GLFW_KEY_G: app->sim.multiplySpeed(1.0 / 1.25); break;
+
+    case GLFW_KEY_Q:
+        app->hole.setSpin(app->hole.spin - 0.02f);
+        app->renderer.invalidate();
+        break;
+    case GLFW_KEY_E:
+        app->hole.setSpin(app->hole.spin + 0.02f);
+        app->renderer.invalidate();
+        break;
+
+    case GLFW_KEY_K:
+        if (action == GLFW_PRESS) {
+            app->renderer.showDisk = !app->renderer.showDisk;
+            app->renderer.invalidate();
+        }
+        break;
+
+    case GLFW_KEY_L:
+        if (action == GLFW_PRESS) {
+            app->renderer.enableShift = !app->renderer.enableShift;
+            app->renderer.invalidate();
+        }
+        break;
+
+    case GLFW_KEY_P:
+        // Deferred: the render loop owns the GL context flow.
+        if (action == GLFW_PRESS) app->screenshotRequested = true;
+        break;
+
+    case GLFW_KEY_F2:
+        if (action == GLFW_PRESS) {
+            app->renderer.accumulate = !app->renderer.accumulate;
+            app->renderer.invalidate();
+            std::printf("[render] temporal accumulation %s\n",
+                        app->renderer.accumulate ? "on" : "off");
+        }
+        break;
+
+    case GLFW_KEY_LEFT_BRACKET:
+        app->renderer.setRenderScale(app->renderer.renderScale() - 0.05f);
+        break;
+    case GLFW_KEY_RIGHT_BRACKET:
+        app->renderer.setRenderScale(app->renderer.renderScale() + 0.05f);
+        break;
+
+    case GLFW_KEY_MINUS:
+        app->renderer.maxSteps = std::max(40, app->renderer.maxSteps - 20);
+        app->renderer.invalidate();
+        break;
+    case GLFW_KEY_EQUAL:
+        app->renderer.maxSteps = std::min(2000, app->renderer.maxSteps + 20);
+        app->renderer.invalidate();
+        break;
+
+    case GLFW_KEY_F5:
+        if (action == GLFW_PRESS) {
+            if (app->renderer.reloadShaders()) std::printf("[shader] reloaded\n");
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
