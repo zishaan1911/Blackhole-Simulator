@@ -65,4 +65,60 @@ void writeChunk(std::vector<uint8_t>& out, const char tag[4],
 
 }  // namespace
 
+bool writePng(const std::string& path, int width, int height,
+              const uint8_t* rgb, bool flipVertically)
+{
+    if (width <= 0 || height <= 0 || !rgb) return false;
+
+    // --- raw scanlines, each prefixed with filter type 0 (None) -------------
+    const size_t stride = static_cast<size_t>(width) * 3;
+    std::vector<uint8_t> raw;
+    raw.reserve((stride + 1) * static_cast<size_t>(height));
+    for (int y = 0; y < height; ++y) {
+        const int src = flipVertically ? (height - 1 - y) : y;
+        raw.push_back(0);
+        const uint8_t* row = rgb + static_cast<size_t>(src) * stride;
+        raw.insert(raw.end(), row, row + stride);
+    }
+
+    // --- zlib stream: 2-byte header, stored deflate blocks, adler32 ---------
+    std::vector<uint8_t> z;
+    z.push_back(0x78);  // CMF: deflate, 32K window
+    z.push_back(0x01);  // FLG: no dict, fastest; (0x7801 % 31) == 0
+
+    const size_t kMaxBlock = 65535;
+    size_t offset = 0;
+    while (offset < raw.size()) {
+        const size_t n = (raw.size() - offset < kMaxBlock) ? (raw.size() - offset) : kMaxBlock;
+        const bool last = (offset + n >= raw.size());
+        z.push_back(last ? 1 : 0);
+        z.push_back(uint8_t(n & 0xFF));
+        z.push_back(uint8_t((n >> 8) & 0xFF));
+        z.push_back(uint8_t((~n) & 0xFF));
+        z.push_back(uint8_t(((~n) >> 8) & 0xFF));
+        z.insert(z.end(), raw.begin() + offset, raw.begin() + offset + n);
+        offset += n;
+    }
+    push32be(z, adler32Of(raw.data(), raw.size()));
+
+    // --- assemble the file --------------------------------------------------
+    std::vector<uint8_t> png = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+
+    std::vector<uint8_t> ihdr;
+    push32be(ihdr, static_cast<uint32_t>(width));
+    push32be(ihdr, static_cast<uint32_t>(height));
+    ihdr.push_back(8);  // bit depth
+    ihdr.push_back(2);  // colour type 2 = truecolour RGB
+    ihdr.push_back(0);  // deflate
+    ihdr.push_back(0);  // adaptive filtering
+    ihdr.push_back(0);  // no interlace
+    writeChunk(png, "IHDR", ihdr);
+    writeChunk(png, "IDAT", z);
+    writeChunk(png, "IEND", {});
+
+    std::FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) return false;
+    const size_t written = std::fwrite(png.data(), 1, png.size(), f);
+    std::fclose(f);
+    return written == png.size();
 }
