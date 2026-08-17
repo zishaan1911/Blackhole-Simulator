@@ -171,3 +171,17 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int)
     }
 }
 
+void cursorPosCallback(GLFWwindow* window, double x, double y)
+{
+    App* app = appFromWindow(window);
+    if (!app || !app->dragging) return;
+
+    const float dx = static_cast<float>(x - app->lastX);
+    const float dy = static_cast<float>(y - app->lastY);
+    app->lastX = x;
+    app->lastY = y;
+
+    app->camera.orbit(-dx * app->mouseSensitivity, dy * app->mouseSensitivity);
+    app->renderer.invalidate();
+}
+
