@@ -158,3 +158,16 @@ void keyCallback(GLFWwindow* window, int key, int, int action, int)
     }
 }
 
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int)
+{
+    App* app = appFromWindow(window);
+    if (!app || button != GLFW_MOUSE_BUTTON_LEFT) return;
+
+    if (action == GLFW_PRESS) {
+        app->dragging = true;
+        glfwGetCursorPos(window, &app->lastX, &app->lastY);
+    } else if (action == GLFW_RELEASE) {
+        app->dragging = false;
+    }
+}
+
