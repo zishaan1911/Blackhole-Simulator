@@ -185,3 +185,11 @@ void cursorPosCallback(GLFWwindow* window, double x, double y)
     app->renderer.invalidate();
 }
 
+void scrollCallback(GLFWwindow* window, double, double yoffset)
+{
+    App* app = appFromWindow(window);
+    if (!app) return;
+    app->camera.zoom(static_cast<float>(-yoffset) * 0.12f);
+    app->renderer.invalidate();
+}
+
