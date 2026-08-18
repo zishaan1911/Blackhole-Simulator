@@ -193,3 +193,10 @@ void scrollCallback(GLFWwindow* window, double, double yoffset)
     app->renderer.invalidate();
 }
 
+void framebufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+    App* app = appFromWindow(window);
+    if (!app) return;
+    app->renderer.resize(width, height);
+}
+
