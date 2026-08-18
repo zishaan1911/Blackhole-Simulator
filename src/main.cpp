@@ -200,3 +200,23 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
     app->renderer.resize(width, height);
 }
 
+void printControls()
+{
+    std::printf(
+        "\n"
+        "  Kerr black hole ray tracer\n"
+        "  --------------------------\n"
+        "  Mouse drag   orbit camera            Space   pause / resume\n"
+        "  Scroll       zoom                    R       reset\n"
+        "  W / S        zoom in / out           T / G   sim speed up / down\n"
+        "  A / D        rotate around hole      Esc     quit\n"
+        "\n"
+        "  Q / E   spin a/M down / up           K   toggle disk\n"
+        "  [ / ]   render scale down / up       L   toggle redshift + Doppler\n"
+        "  - / =   fewer / more RK4 steps       P   save screenshot (PNG)\n"
+        "  F2      toggle accumulation          F5  reload shaders\n"
+        "\n");
+}
+
+}  // namespace
+
