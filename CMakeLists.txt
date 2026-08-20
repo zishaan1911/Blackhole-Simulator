@@ -44,3 +44,14 @@ endif()
 # ---------------------------------------------------------------------------
 # Target
 # ---------------------------------------------------------------------------
+add_executable(kerr
+    src/main.cpp
+    src/BlackHole.cpp
+    src/Camera.cpp
+    src/Renderer.cpp
+    src/Simulation.cpp
+    src/Shader.cpp
+    src/glad_min.cpp
+    src/PngWriter.cpp
+)
+
