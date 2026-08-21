@@ -55,3 +55,10 @@ add_executable(kerr
     src/PngWriter.cpp
 )
 
+target_include_directories(kerr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Absolute fallback path so the binary finds its shaders no matter where it is
+# launched from.
+target_compile_definitions(kerr PRIVATE
+    SHADER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+
