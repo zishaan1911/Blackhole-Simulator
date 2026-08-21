@@ -62,3 +62,9 @@ target_include_directories(kerr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(kerr PRIVATE
     SHADER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 
+if(TARGET glm::glm)
+    target_link_libraries(kerr PRIVATE glfw glm::glm)
+else()
+    target_link_libraries(kerr PRIVATE glfw glm)
+endif()
+
