@@ -75,3 +75,8 @@ else()
 endif()
 
 # Copy the shaders next to the executable for a self-contained build dir.
+add_custom_command(TARGET kerr POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+            $<TARGET_FILE_DIR:kerr>/shaders
+    COMMENT "Copying shaders")
