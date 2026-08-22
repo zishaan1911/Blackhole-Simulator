@@ -68,3 +68,10 @@ else()
     target_link_libraries(kerr PRIVATE glfw glm)
 endif()
 
+if(MSVC)
+    target_compile_options(kerr PRIVATE /W3)
+else()
+    target_compile_options(kerr PRIVATE -Wall -Wextra -Wno-unused-parameter)
+endif()
+
+# Copy the shaders next to the executable for a self-contained build dir.
