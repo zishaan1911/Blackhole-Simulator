@@ -54,3 +54,12 @@ and the integrator are all correct simultaneously. It also confirms that moving
 the capture surface off the horizon (necessary for float stability) does not
 shrink the rendered shadow.
 
+## Note on a common false alarm
+
+An earlier version of the harness converted the emission angle to an impact
+parameter with the flat-space relation `b = r₀ sin α` at `r₀ = 26 M`. That gave a
+stubborn 3.9% "error" that did not shrink with step size. The relation is only
+asymptotic; at finite radius in curved spacetime `b ≠ r₀ sin α`. Measuring the
+conserved `L/E` directly gives agreement to 10⁻⁷. Worth remembering: an error
+that refuses to converge under refinement is usually in the measurement, not the
+integrator.
