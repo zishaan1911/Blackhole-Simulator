@@ -48,3 +48,33 @@ though it is untested.
 
 ---
 
+## Controls
+
+| Input        | Action                        |
+|--------------|-------------------------------|
+| Mouse drag   | Orbit the camera              |
+| Scroll       | Zoom                          |
+| `W` / `S`    | Zoom in / out                 |
+| `A` / `D`    | Rotate around the black hole  |
+| `Space`      | Pause / resume                |
+| `R`          | Reset camera and simulation   |
+| `T` / `G`    | Simulation speed up / down    |
+| `Esc`        | Quit                          |
+
+Extras:
+
+| Input        | Action                                    |
+|--------------|-------------------------------------------|
+| `Q` / `E`    | Spin `a/M` down / up                      |
+| `K`          | Toggle the accretion disk                 |
+| `L`          | Toggle redshift / Doppler / beaming       |
+| `[` / `]`    | Render resolution scale down / up         |
+| `-` / `=`    | Fewer / more integration steps            |
+| `F5`         | Hot-reload the shaders                    |
+
+There is no GUI. The window title is the HUD: spin, mass, camera radius,
+simulation time, speed, trace resolution, step count, accumulated samples per
+pixel and FPS.
+
+---
+
