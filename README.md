@@ -78,3 +78,34 @@ pixel and FPS.
 
 ---
 
+## What is being computed
+
+Units are geometrised, `G = c = 1`, so all lengths are in units of `GM/c²`.
+
+For each pixel the shader:
+
+1. Converts the camera position from pseudo-Cartesian (oblate spheroidal)
+   coordinates to Boyer-Lindquist `(r, θ, φ)`.
+2. Builds the photon four-momentum in the local orthonormal frame of a ZAMO
+   (zero angular momentum observer), normalised to unit local energy.
+3. Lowers indices with the covariant Kerr metric to obtain the conserved
+   `E = -p_t` and `L = p_φ`.
+4. Integrates Hamilton's equations for `(r, θ, φ, p_r, p_θ)` with RK4:
+
+   ```
+   dxⁱ/dλ =  ∂H/∂pᵢ        H = ½ g^{μν} p_μ p_ν  ( = 0 for a photon )
+   dpᵢ/dλ = -∂H/∂xⁱ
+   ```
+
+   using analytic derivatives of the inverse metric. `t` and `φ` are cyclic, so
+   only five quantities are carried.
+5. Accumulates emission at each equatorial-plane crossing that lands between the
+   ISCO and the outer disk edge, and samples a procedural sky if the photon
+   escapes to `r = 1000 M`.
+
+The trace pass writes **linear** radiance to a float target. A second pass keeps
+a running mean across frames, and a third tone maps to the screen.
+
+Rays that reach the capture surface contribute nothing — that is the shadow, and
+the photon ring falls out of the integration on its own.
+
