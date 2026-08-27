@@ -109,3 +109,23 @@ a running mean across frames, and a third tone maps to the screen.
 Rays that reach the capture surface contribute nothing — that is the shadow, and
 the photon ring falls out of the integration on its own.
 
+### Relativistic effects on the disk
+
+The emitting gas is on a prograde circular orbit with
+`Ω = √M / (r^{3/2} + a√M)`. Because the photon was normalised to unit energy in
+the camera frame, the full redshift factor collapses to
+
+```
+g = 1 / [ u^t (E - Ω L) ]
+```
+
+which contains gravitational redshift, transverse and longitudinal Doppler, and
+frame dragging in one number. Specific intensity is scaled by `g³` and the local
+blackbody temperature by `g`, so the approaching side is both brighter and bluer.
+
+Frame dragging also enters the photon paths directly through the `g^{tφ}` terms,
+which is why the shadow is visibly off-centre and flattened on one side at high
+spin.
+
+---
+
