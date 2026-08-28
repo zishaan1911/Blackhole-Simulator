@@ -162,3 +162,19 @@ Both are fixed by the step limiters described below.
 
 ---
 
+## Temporal accumulation
+
+Each frame jitters the ray by a sub-pixel offset drawn from a Halton sequence
+and averages into a float buffer, weighting the new sample by `1/(n+1)` so it is
+an exact running mean rather than an exponential fade. Any change to the image —
+camera motion, simulation time, a parameter edit — discards the history.
+
+The practical effect: while you orbit, the image is rough; the moment you stop,
+it converges to a clean antialiased frame within about a second. This suits slow
+hardware far better than blurring would, because the feature most damaged by low
+resolution is the photon ring, which is only a couple of pixels wide. Blur
+destroys it; accumulation sharpens it.
+
+Accumulation stops at 256 samples, after which a still camera costs almost
+nothing. `F2` turns it off.
+
