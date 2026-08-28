@@ -129,3 +129,36 @@ spin.
 
 ---
 
+## Verification
+
+Because the renderer is a physics calculation, the integrator was checked
+against known results rather than judged by eye. The numbers below come from a
+double-precision harness (`docs/verification.md`) that runs the same equations.
+
+| Test | Result |
+|---|---|
+| Null condition `H = 0` conserved along a ray (`a/M = 0.9`) | max &#124;H&#124; = 2×10⁻⁶ |
+| Weak-field deflection vs `4M/b + 15πM²/4b²` | 1.0×10⁻⁴ at `b = 320 M`, falling as 1/b² |
+| Critical impact parameter `b_crit` vs analytic Kerr value | 8×10⁻⁸ (`a=0`), 1.6×10⁻⁷ (`a=0.85`), 2.0×10⁻⁷ (`a=0.95`) |
+| Frame dragging, radially aimed photon | +2.16 rad of φ at `a/M = 0.9`; exactly 0 at `a = 0` |
+| Disk redshift, radial ray at ISCO | reduces to `√(1 - 3M/r)` analytically |
+
+`b_crit` is the strongest of these: it is the angular size of the shadow, and it
+only comes out right if the metric, the ZAMO tetrad and the integrator are all
+correct together.
+
+The fragment-shader port was checked against the original compute-shader output
+at 800×450: **0 of 360000 pixels differ**. Only the I/O wrapper changed.
+
+The shader was also cross-compiled to a CPU renderer and inspected visually,
+which caught two bugs the numerical tests could not:
+
+- a dark seam along the projected spin axis, from the `sinθ → 0` coordinate
+  singularity;
+- stars visible *inside* the shadow, caused by RK4 stages stepping to `r < r₊`
+  where `Δ` changes sign and photons get ejected back out.
+
+Both are fixed by the step limiters described below.
+
+---
+
