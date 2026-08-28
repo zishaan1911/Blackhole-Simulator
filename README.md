@@ -178,3 +178,22 @@ destroys it; accumulation sharpens it.
 Accumulation stops at 256 samples, after which a still camera costs almost
 nothing. `F2` turns it off.
 
+## Screenshots
+
+`P` renders one frame off-screen at settings independent of the interactive
+ones — 1600x900, 600 steps, 32 samples by default — tone maps it, reads it back
+and writes a PNG next to the executable. It ignores the render scale entirely,
+so a GPU too slow for smooth interaction can still produce clean stills. Expect
+it to take a few seconds and the window to stop responding while it works.
+
+The defaults live in the `App` struct in `src/main.cpp`:
+
+```cpp
+int shotWidth = 1600, shotHeight = 900;
+int shotSteps = 600, shotSamples = 32;
+```
+
+PNG encoding is done by `src/PngWriter.cpp`, which has no dependencies: it emits
+DEFLATE stored blocks rather than linking zlib. Files are a little larger than a
+compressing encoder would produce, which is a fair trade for a screenshot key.
+
