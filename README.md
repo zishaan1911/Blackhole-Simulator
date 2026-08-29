@@ -215,3 +215,26 @@ renderer.stepScale = 0.25f;     // affine step ~ stepScale * r
 
 The disk inner edge defaults to the ISCO, computed from the spin.
 
+### Performance
+
+Cost is roughly `pixels × steps`. The 99th-percentile ray uses about 163 steps at
+`stepScale = 0.25`, and 0.4% of pixels hit the 320-step cap (see limitations).
+
+Rough arithmetic for a 1280×720 window:
+
+| render scale | traced pixels | work per frame |
+|---|---|---|
+| 0.15 | 192×108 | ~0.9 GFLOP |
+| 0.25 | 320×180 | ~2.4 GFLOP |
+| 0.35 | 448×251 | ~4.6 GFLOP |
+| 0.50 | 640×360 | ~9.4 GFLOP |
+
+The default is 0.25. Raise it with `]` on a capable GPU; drop it with `[` if you
+are below 30 FPS. `stepScale` up to 0.30 is still accurate to ~5×10⁻⁷ on
+`b_crit` if you need more speed.
+
+On something like an Intel HD 4000 (~300 GFLOPS peak, and realistically well
+under that on transcendental-heavy code — the metric evaluation calls `sin` and
+`cos` about 1300 times per pixel) expect single-digit to low-teens FPS at 0.15–0.25.
+That is a genuine hardware limit, not a tuning failure. Use `P` for stills.
+
