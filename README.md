@@ -197,3 +197,21 @@ PNG encoding is done by `src/PngWriter.cpp`, which has no dependencies: it emits
 DEFLATE stored blocks rather than linking zlib. Files are a little larger than a
 compressing encoder would produce, which is a fair trade for a screenshot key.
 
+## Tuning
+
+Everything worth changing lives in the setup block in `src/main.cpp` and in
+`BlackHole.hpp` / `Renderer.hpp`.
+
+```cpp
+hole.mass            = 1.0f;    // M
+hole.spin            = 0.85f;   // a/M
+hole.diskOuterRadii  = 20.0f;   // outer disk edge, in M
+hole.diskTemperature = 6500.0f; // peak local blackbody temperature (K)
+
+renderer.setRenderScale(0.25f); // trace resolution / window resolution
+renderer.maxSteps  = 320;       // RK4 steps per photon
+renderer.stepScale = 0.25f;     // affine step ~ stepScale * r
+```
+
+The disk inner edge defaults to the ISCO, computed from the spin.
+
