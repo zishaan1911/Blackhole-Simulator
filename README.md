@@ -275,3 +275,18 @@ that exist for specific reasons:
 
 ---
 
+## Layout
+
+```
+CMakeLists.txt
+include/    BlackHole.hpp  Camera.hpp  Renderer.hpp  Simulation.hpp
+            Shader.hpp     PngWriter.hpp  glad_min.h
+src/        main.cpp  BlackHole.cpp  Camera.cpp  Renderer.cpp
+            Simulation.cpp  Shader.cpp  PngWriter.cpp  glad_min.cpp
+shaders/    kerr_raytrace.frag  accumulate.frag  present.frag  fullscreen.vert
+docs/       verification.md  and the images in this file
+```
+
+`glad_min.{h,cpp}` is a small self-contained loader for the ~44 GL entry points
+used here. It exposes the same `gladLoadGLLoader` entry point as GLAD, so you can
+delete it and drop in official GLAD output without touching anything else.
