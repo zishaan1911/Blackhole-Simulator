@@ -238,3 +238,15 @@ under that on transcendental-heavy code — the metric evaluation calls `sin` an
 `cos` about 1300 times per pixel) expect single-digit to low-teens FPS at 0.15–0.25.
 That is a genuine hardware limit, not a tuning failure. Use `P` for stills.
 
+### Step size
+
+The affine step is `stepScale · r / (1 + 8M/r)`, then clamped by three limiters
+that exist for specific reasons:
+
+- capped inside the disk radius, so equatorial crossings are not skipped;
+- `0.35 · sinθ / |dθ/dλ|` and `0.25 / |dφ/dλ|`, so photons approach the polar
+  axis geometrically instead of stepping across the coordinate singularity;
+- `0.25 · (r - r₊)`, so no RK4 stage can land inside the horizon.
+
+---
+
