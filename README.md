@@ -250,3 +250,28 @@ that exist for specific reasons:
 
 ---
 
+## Known limitations
+
+- **Spin is capped at `a/M = 0.95`.** As the spin approaches extremal, `r₊`, the
+  inner horizon and the prograde photon orbit crowd into a shell a few hundredths
+  of `M` thick. Boyer-Lindquist ray tracing in 32-bit floats stops being
+  trustworthy there — photons leak back out through the horizon and speckle the
+  shadow (measured at 3.6% of shadow pixels at `a/M = 0.998`, versus 0% at 0.85).
+  Fixing this properly needs horizon-penetrating coordinates such as Kerr-Schild,
+  which is a larger change than this project takes on.
+- **About 0.4% of pixels exhaust the 320-step budget** and render black. These
+  are rays trapped near the photon shell; raising the cap to 700 changes nothing,
+  so they are genuinely trapped rather than merely slow. The visible effect is a
+  thin dark arc exactly where the photon ring is brightest. Cosmetic, not a
+  correctness problem, but it is there.
+- The disk is a zero-thickness emitting sheet with a Novikov-Thorne-like radial
+  profile and procedural turbulence. It is not a radiative-transfer solution, and
+  the turbulence is noise rather than magnetohydrodynamics.
+- The camera is treated as a ZAMO, so there is no camera-motion Doppler when you
+  orbit.
+- Light travel time is not accounted for in the disk's rotation: the disk is
+  sampled at the current simulation time rather than at the retarded time of each
+  crossing.
+
+---
+
