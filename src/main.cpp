@@ -268,8 +268,8 @@ int main()
     app.hole.mass           = 1.0f;    // M, geometrised units
     app.hole.spin           = 0.85f;   // a/M
     app.hole.diskOuterRadii = 20.0f;   // outer disk edge, in units of M
-    app.hole.diskTemperature = 6500.0f;
-    app.hole.diskBrightness  = 0.50f;
+    app.hole.diskTemperature = 2000.0f;
+    app.hole.diskBrightness  = 1.60f;
     app.hole.diskOpacity     = 0.80f;
 
     app.camera.setDefaults(/*distance*/ 26.0f * app.hole.mass,

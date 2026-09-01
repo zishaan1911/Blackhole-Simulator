@@ -22,8 +22,16 @@ public:
     float diskOuterRadii    = 20.0f;  // outer edge, in units of M
 
     // Disk appearance.
-    float diskTemperature = 6500.0f;  // peak local blackbody temperature (K)
-    float diskBrightness  = 0.50f;
+    //
+    // diskTemperature is the PEAK local blackbody temperature and is an
+    // artistic choice, not a physical one. Real thin disks run 1e4-1e7 K, which
+    // renders as white or blue-white because the normalised Planckian locus is
+    // almost colourless above ~5000 K. 2000 K puts the peak in the saturated
+    // orange part of the curve, so the radial temperature gradient and the
+    // Doppler shift both read as visible colour. Raise it towards 10000 for
+    // physical realism and a much paler disk.
+    float diskTemperature = 2000.0f;  // peak local blackbody temperature (K)
+    float diskBrightness  = 1.60f;
     float diskOpacity     = 0.80f;    // per-crossing opacity of the (thin) disk
 
     // ---- Derived quantities -------------------------------------------------

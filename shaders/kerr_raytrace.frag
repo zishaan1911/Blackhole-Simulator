@@ -303,8 +303,10 @@ vec3 skyColour(vec3 d)
     float t    = dot(d, axis);
     float band = exp(-t * t * 14.0);
     float neb  = fbm3(d * 5.0) * 0.7 + fbm3(d * 13.0) * 0.3;
-    col += band * neb * vec3(0.055, 0.048, 0.085);
-    col += vec3(0.004, 0.005, 0.010);
+    // Near-neutral; the faint blue bias here was arbitrary, and it fought
+    // the warm disk. Tint these if you want a coloured sky.
+    col += band * neb * vec3(0.060, 0.058, 0.062);
+    col += vec3(0.005, 0.005, 0.006);
 
     return col;
 }
@@ -524,12 +526,6 @@ vec3 trace(vec3 camPos, vec3 dir)
     return colour;
 }
 
-// =============================================================================
-vec3 acesFilm(vec3 x)
-{
-    const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
-    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
-}
 
 
 void main()

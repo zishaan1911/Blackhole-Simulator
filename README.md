@@ -206,7 +206,7 @@ Everything worth changing lives in the setup block in `src/main.cpp` and in
 hole.mass            = 1.0f;    // M
 hole.spin            = 0.85f;   // a/M
 hole.diskOuterRadii  = 20.0f;   // outer disk edge, in M
-hole.diskTemperature = 6500.0f; // peak local blackbody temperature (K)
+hole.diskTemperature = 2000.0f; // peak local blackbody temperature (K)
 
 renderer.setRenderScale(0.25f); // trace resolution / window resolution
 renderer.maxSteps  = 320;       // RK4 steps per photon
@@ -249,6 +249,32 @@ that exist for specific reasons:
 - `0.25 · (r - r₊)`, so no RK4 stage can land inside the horizon.
 
 ---
+
+## A note on the disk colour
+
+`diskTemperature` is the peak **local** blackbody temperature and is an artistic
+choice, not a physical one.
+
+The rendered hue is `blackbody(T_local x g)`, and the normalised Planckian locus
+is almost colourless above about 5000 K:
+
+| T (K) | normalised RGB | look |
+|---|---|---|
+| 1500 | (1.00, 0.42, 0.00) | deep red |
+| 2000 | (1.00, 0.54, 0.05) | orange |
+| 2500 | (1.00, 0.62, 0.27) | amber |
+| 3400 | (1.00, 0.74, 0.53) | pale tan |
+| 6500 | (1.00, 1.00, 0.98) | near white |
+
+So a physically realistic disk (1e4-1e7 K for real accretion flows) renders as a
+white or blue-white smear with no visible colour structure at all. The default of
+2000 K puts the peak in the saturated part of the curve, which is what makes the
+radial temperature gradient and the Doppler shift legible as colour: deep red at
+the outer edge, yellow-white at the inner edge, hot white on the approaching
+side.
+
+Raise it towards 10000 for realism and a much paler image. The physics is
+identical either way; only the colour lookup changes.
 
 ## Known limitations
 
