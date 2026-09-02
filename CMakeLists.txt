@@ -75,6 +75,10 @@ else()
     target_compile_options(kerr PRIVATE -Wall -Wextra -Wno-unused-parameter)
 endif()
 
+if(MINGW)
+    target_link_options(kerr PRIVATE -static-libgcc -static-libstdc++)
+endif()
+
 # Copy the shaders next to the executable for a self-contained build dir.
 add_custom_command(TARGET kerr POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
