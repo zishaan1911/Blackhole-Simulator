@@ -57,6 +57,8 @@ though it is untested.
 | `W` / `S`    | Zoom in / out                 |
 | `A` / `D`    | Rotate around the black hole  |
 | `Space`      | Pause / resume                |
+| `O`          | Toggle automatic camera orbit |
+| `,` / `.`    | Auto-orbit slower / faster    |
 | `R`          | Reset camera and simulation   |
 | `T` / `G`    | Simulation speed up / down    |
 | `Esc`        | Quit                          |
@@ -67,6 +69,7 @@ Extras:
 |--------------|-------------------------------------------|
 | `Q` / `E`    | Spin `a/M` down / up                      |
 | `K`          | Toggle the accretion disk                 |
+| `B`          | Toggle the orbiting bodies                |
 | `L`          | Toggle redshift / Doppler / beaming       |
 | `[` / `]`    | Render resolution scale down / up         |
 | `-` / `=`    | Fewer / more integration steps            |
@@ -249,6 +252,50 @@ that exist for specific reasons:
 - `0.25 · (r - r₊)`, so no RK4 stage can land inside the horizon.
 
 ---
+
+## Orbiting bodies
+
+Four self-luminous bodies orbit the hole on tilted circular orbits at the
+Keplerian rate for their radius. They are **intersected along the photon's
+geodesic**, not composited on top of the image, which means they lens exactly
+like everything else: a body passing behind the hole is stretched into thin arcs
+above and below the shadow, and can be visible on both sides at once. They also
+pick up the same redshift factor as the disk, so the approaching side of each
+orbit is brighter and bluer.
+
+Cost is one ray/sphere test per body per integration step, which is small next
+to the metric evaluation. `B` toggles them off.
+
+Configure them in `src/Bodies.cpp`:
+
+```cpp
+OrbitingBody b;
+b.orbitRadius = 27.0f;   // in units of M
+b.radius      = 0.85f;
+b.phase       = 2.1f;    // orbital phase at t = 0
+b.inclination = -0.35f;  // tilt out of the equatorial plane
+b.colourR = 0.62f; b.colourG = 0.78f; b.colourB = 1.00f;
+b.brightness = 1.05f;
+```
+
+Up to `kMaxBodies` (8) are supported; the shader carries a fixed-size array, so
+raise it in both `Bodies.hpp` and `MAX_BODIES` in the shader if you want more.
+
+The orbit radius is treated as a pseudo-Cartesian radius rather than a
+Boyer-Lindquist one. For bodies beyond about 15 M the difference is under
+`a^2/(2r) < 0.04 M`, far smaller than the bodies themselves.
+
+## Automatic camera orbit
+
+The camera drifts around the hole by default at 0.06 rad/s, roughly 100 seconds
+per revolution. `O` stops and starts it; `,` and `.` scale the speed by 1.3x per
+press, between 0.005 and 2.0 rad/s. Setting a negative `autoOrbitSpeed` in
+`src/main.cpp` reverses it.
+
+Camera motion discards accumulated samples every frame, so while the camera is
+drifting you see single-sample frames. The renderer is deterministic apart from
+the jitter, so this shows up as slightly aliased edges rather than noise. Stop
+the orbit with `O` and the image converges within about a second.
 
 ## A note on the disk colour
 

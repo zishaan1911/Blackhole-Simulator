@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BlackHole.hpp"
+#include "Bodies.hpp"
 #include "Camera.hpp"
 #include "Shader.hpp"
 #include "Simulation.hpp"
@@ -23,7 +24,8 @@ public:
     void shutdown();
 
     void resize(int framebufferWidth, int framebufferHeight);
-    void render(const Camera& cam, const BlackHole& bh, const Simulation& sim);
+    void render(const Camera& cam, const BlackHole& bh, const Simulation& sim,
+                const BodySystem& bodies);
 
     bool reloadShaders();
 
@@ -36,8 +38,8 @@ public:
     // Independent of the interactive settings, so a slow GPU can still produce
     // clean stills. Returns false if anything failed (see stderr).
     bool screenshot(const Camera& cam, const BlackHole& bh, const Simulation& sim,
-                    const std::string& path, int width, int height,
-                    int steps, int samples);
+                    const BodySystem& bodies, const std::string& path,
+                    int width, int height, int steps, int samples);
 
     // ---- Quality knobs ------------------------------------------------------
     void  setRenderScale(float s);
@@ -70,8 +72,8 @@ private:
     bool  createTarget(Target& t, int w, int h);
     void  destroyTarget(Target& t);
     void  setTraceUniforms(const Camera& cam, const BlackHole& bh,
-                           const Simulation& sim, int w, int h,
-                           int steps, float jx, float jy);
+                           const Simulation& sim, const BodySystem& bodies,
+                           int w, int h, int steps, float jx, float jy);
     void  drawFullscreen();
 
     Shader m_trace;

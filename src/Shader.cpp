@@ -135,3 +135,8 @@ void Shader::set(const char* name, int v)                     { glUniform1i(loca
 void Shader::set(const char* name, float v)                   { glUniform1f(location(name), v); }
 void Shader::set(const char* name, float x, float y)          { glUniform2f(location(name), x, y); }
 void Shader::set(const char* name, float x, float y, float z) { glUniform3f(location(name), x, y, z); }
+
+void Shader::setVec4Array(const char* name, int count, const float* values)
+{
+    glUniform4fv(location(name), count, values);
+}

@@ -111,6 +111,7 @@ typedef ptrdiff_t      GLsizeiptr;
     X(void,               Uniform2f,           (GLint, GLfloat, GLfloat))                \
     X(void,               Uniform3f,           (GLint, GLfloat, GLfloat, GLfloat))       \
     X(void,               Uniform4f,           (GLint, GLfloat, GLfloat, GLfloat, GLfloat)) \
+    X(void,               Uniform4fv,          (GLint, GLsizei, const GLfloat*))         \
     X(void,               GenVertexArrays,     (GLsizei, GLuint*))                       \
     X(void,               BindVertexArray,     (GLuint))                                 \
     X(void,               DeleteVertexArrays,  (GLsizei, const GLuint*))                 \

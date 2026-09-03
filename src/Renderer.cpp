@@ -131,8 +131,8 @@ void Renderer::drawFullscreen()
 }
 
 void Renderer::setTraceUniforms(const Camera& cam, const BlackHole& bh,
-                                const Simulation& sim, int w, int h,
-                                int steps, float jx, float jy)
+                                const Simulation& sim, const BodySystem& bodies,
+                                int w, int h, int steps, float jx, float jy)
 {
     const glm::vec3 pos = cam.position();
     const glm::vec3 fwd = cam.forward();
@@ -163,9 +163,17 @@ void Renderer::setTraceUniforms(const Camera& cam, const BlackHole& bh,
     m_trace.set("uHorizonMargin", horizonMargin);
     m_trace.set("uEnableShift",   enableShift ? 1 : 0);
     m_trace.set("uJitter",        jx, jy);
+
+    float orbit[kMaxBodies * 4];
+    float colour[kMaxBodies * 4];
+    bodies.pack(orbit, colour);
+    m_trace.set("uBodyCount", bodies.count());
+    m_trace.setVec4Array("uBodyOrbit",  kMaxBodies, orbit);
+    m_trace.setVec4Array("uBodyColour", kMaxBodies, colour);
 }
 
-void Renderer::render(const Camera& cam, const BlackHole& bh, const Simulation& sim)
+void Renderer::render(const Camera& cam, const BlackHole& bh, const Simulation& sim,
+                      const BodySystem& bodies)
 {
     if (!m_trace.valid() || !m_accum.valid() || !m_present.valid()) return;
     if (!m_traceTarget.fbo) return;
@@ -186,7 +194,7 @@ void Renderer::render(const Camera& cam, const BlackHole& bh, const Simulation& 
         glBindFramebuffer(GL_FRAMEBUFFER, m_traceTarget.fbo);
         glViewport(0, 0, m_traceW, m_traceH);
         m_trace.use();
-        setTraceUniforms(cam, bh, sim, m_traceW, m_traceH, maxSteps, jx, jy);
+        setTraceUniforms(cam, bh, sim, bodies, m_traceW, m_traceH, maxSteps, jx, jy);
         drawFullscreen();
 
         // ---- pass 2: accumulate ---------------------------------------------
@@ -222,8 +230,8 @@ void Renderer::render(const Camera& cam, const BlackHole& bh, const Simulation& 
 }
 
 bool Renderer::screenshot(const Camera& cam, const BlackHole& bh, const Simulation& sim,
-                          const std::string& path, int width, int height,
-                          int steps, int samples)
+                          const BodySystem& bodies, const std::string& path,
+                          int width, int height, int steps, int samples)
 {
     if (!m_trace.valid() || !m_accum.valid() || !m_present.valid()) return false;
 
@@ -244,7 +252,7 @@ bool Renderer::screenshot(const Camera& cam, const BlackHole& bh, const Simulati
         glBindFramebuffer(GL_FRAMEBUFFER, hi.fbo);
         glViewport(0, 0, width, height);
         m_trace.use();
-        setTraceUniforms(cam, bh, sim, width, height, steps, jx, jy);
+        setTraceUniforms(cam, bh, sim, bodies, width, height, steps, jx, jy);
         drawFullscreen();
 
         const int dst = 1 - front;

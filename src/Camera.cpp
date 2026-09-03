@@ -73,6 +73,20 @@ glm::vec3 Camera::up() const
     return glm::normalize(glm::cross(right(), forward()));
 }
 
+bool Camera::advance(float dt)
+{
+    if (!autoOrbit || autoOrbitSpeed == 0.0f || dt <= 0.0f) return false;
+    addYaw(autoOrbitSpeed * dt);
+    return true;
+}
+
+void Camera::scaleAutoOrbitSpeed(float factor)
+{
+    float s = std::fabs(autoOrbitSpeed) * factor;
+    s = std::clamp(s, autoOrbitMin, autoOrbitMax);
+    autoOrbitSpeed = (autoOrbitSpeed < 0.0f) ? -s : s;
+}
+
 float Camera::tanHalfFovY() const
 {
     return std::tan(0.5f * m_fovY);

@@ -9,11 +9,14 @@
 //    Space ............ pause / resume
 //    R ................ reset camera + simulation
 //    T / G ............ increase / decrease simulation speed
+//    O ................ toggle automatic camera orbit
+//    , / . ............ automatic orbit slower / faster
 //    Esc .............. quit
 //
 //  Extras (not required, but handy)
 //    Q / E ............ decrease / increase spin a/M
 //    K ................ toggle the accretion disk
+//    B ................ toggle the orbiting bodies
 //    L ................ toggle redshift / Doppler / beaming
 //    [ / ] ............ lower / raise render resolution scale
 //    - / = ............ fewer / more integration steps
@@ -23,6 +26,7 @@
 // =============================================================================
 
 #include "BlackHole.hpp"
+#include "Bodies.hpp"
 #include "Camera.hpp"
 #include "Renderer.hpp"
 #include "PngWriter.hpp"
@@ -44,12 +48,14 @@ struct App {
     Camera     camera;
     BlackHole  hole;
     Simulation sim;
+    BodySystem bodies;
     Renderer   renderer;
 
     bool   dragging = false;
     double lastX = 0.0, lastY = 0.0;
 
     bool  screenshotRequested = false;
+    bool  bodiesVisible       = true;
 
     // Screenshot settings, deliberately independent of the interactive ones so
     // a slow GPU can still produce clean stills.
@@ -87,6 +93,8 @@ void keyCallback(GLFWwindow* window, int key, int, int action, int)
         if (action == GLFW_PRESS) {
             app->camera.reset();
             app->sim.reset();
+            app->bodies.addDefaults(app->hole);
+            app->bodiesVisible = true;
             app->renderer.invalidate();
         }
         break;
@@ -113,6 +121,34 @@ void keyCallback(GLFWwindow* window, int key, int, int action, int)
     case GLFW_KEY_L:
         if (action == GLFW_PRESS) {
             app->renderer.enableShift = !app->renderer.enableShift;
+            app->renderer.invalidate();
+        }
+        break;
+
+    case GLFW_KEY_O:
+        if (action == GLFW_PRESS) {
+            app->camera.autoOrbit = !app->camera.autoOrbit;
+            app->renderer.invalidate();
+            std::printf("[camera] auto-orbit %s (%.3f rad/s)\n",
+                        app->camera.autoOrbit ? "on" : "off",
+                        app->camera.autoOrbitSpeed);
+        }
+        break;
+
+    case GLFW_KEY_COMMA:
+        app->camera.scaleAutoOrbitSpeed(1.0f / 1.3f);
+        std::printf("[camera] auto-orbit %.3f rad/s\n", app->camera.autoOrbitSpeed);
+        break;
+    case GLFW_KEY_PERIOD:
+        app->camera.scaleAutoOrbitSpeed(1.3f);
+        std::printf("[camera] auto-orbit %.3f rad/s\n", app->camera.autoOrbitSpeed);
+        break;
+
+    case GLFW_KEY_B:
+        if (action == GLFW_PRESS) {
+            app->bodiesVisible = !app->bodiesVisible;
+            if (app->bodiesVisible) app->bodies.addDefaults(app->hole);
+            else                    app->bodies.clear();
             app->renderer.invalidate();
         }
         break;
@@ -215,6 +251,8 @@ void printControls()
         "  [ / ]   render scale down / up       L   toggle redshift + Doppler\n"
         "  - / =   fewer / more RK4 steps       P   save screenshot (PNG)\n"
         "  F2      toggle accumulation          F5  reload shaders\n"
+        "  O       toggle auto-orbit            B   toggle orbiting bodies\n"
+        "  , / .   auto-orbit slower / faster\n"
         "\n");
 }
 
@@ -279,6 +317,11 @@ int main()
     app.camera.minDistance = app.hole.horizonRadius() * 2.5f;
     app.camera.maxDistance = 400.0f * app.hole.mass;
 
+    app.camera.autoOrbit      = true;
+    app.camera.autoOrbitSpeed = 0.06f;   // ~100 s per revolution
+
+    app.bodies.addDefaults(app.hole);
+
     app.sim.baseRate = 6.0;            // units of M per real second at speed 1
 
     // Conservative default: this runs on GPUs without compute shaders, which
@@ -342,6 +385,8 @@ int main()
             app.camera.addYaw(-app.keyOrbitSpeed * static_cast<float>(dt)); moved = true;
         }
 
+        if (app.camera.advance(static_cast<float>(dt))) moved = true;
+
         const double tBefore = app.sim.time();
         app.sim.update(dt);
         // Any change to the image invalidates the accumulated samples.
@@ -351,12 +396,12 @@ int main()
             app.screenshotRequested = false;
             char name[128];
             std::snprintf(name, sizeof(name), "kerr_%.0f.png", glfwGetTime() * 1000.0);
-            app.renderer.screenshot(app.camera, app.hole, app.sim, name,
+            app.renderer.screenshot(app.camera, app.hole, app.sim, app.bodies, name,
                                     app.shotWidth, app.shotHeight,
                                     app.shotSteps, app.shotSamples);
         }
 
-        app.renderer.render(app.camera, app.hole, app.sim);
+        app.renderer.render(app.camera, app.hole, app.sim, app.bodies);
 
         glfwSwapBuffers(window);
 

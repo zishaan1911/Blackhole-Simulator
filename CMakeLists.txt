@@ -53,6 +53,7 @@ add_executable(kerr
     src/Shader.cpp
     src/glad_min.cpp
     src/PngWriter.cpp
+    src/Bodies.cpp
 )
 
 target_include_directories(kerr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

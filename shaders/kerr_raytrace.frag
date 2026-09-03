@@ -53,6 +53,12 @@ uniform float uEscapeRadius;
 uniform float uHorizonMargin; // where to stop, between r+ (0) and r_photon (1)
 uniform int   uEnableShift;   // gravitational redshift + Doppler + beaming
 
+// ---- orbiting bodies --------------------------------------------------------
+#define MAX_BODIES 8
+uniform int  uBodyCount;
+uniform vec4 uBodyOrbit[MAX_BODIES];   // (orbitRadius, radius, phase, inclination)
+uniform vec4 uBodyColour[MAX_BODIES];  // (r, g, b, brightness)
+
 // ---- temporal accumulation --------------------------------------------------
 uniform vec2  uJitter;        // sub-pixel offset in pixels, for antialiasing
 
@@ -201,6 +207,87 @@ void blJacobian(float r, float th, float ph, out vec3 Jr, out vec3 Jh, out vec3 
     Jr = vec3((r / R) * s * cp, (r / R) * s * sp, c);
     Jh = vec3(R * c * cp,       R * c * sp,      -r * s);
     Jp = vec3(-R * s * sp,      R * s * cp,       0.0);
+}
+
+// Position of a Boyer-Lindquist point in the pseudo-Cartesian frame the
+// camera and the orbiting bodies live in.
+vec3 blToCartesian(float r, float th, float ph)
+{
+    float R = sqrt(r * r + uA * uA);
+    float s = sin(th);
+    return vec3(R * s * cos(ph), R * s * sin(ph), r * cos(th));
+}
+
+// Centre of body i at simulation time t.
+//
+// Circular orbit at the Keplerian rate for its radius, tilted out of the
+// equatorial plane by `inclination`. The orbit radius is treated as a
+// pseudo-Cartesian radius rather than a Boyer-Lindquist one; for bodies at
+// r >~ 15 M the difference is below a^2/(2r) < 0.04 M, which is far smaller
+// than the bodies themselves.
+vec3 bodyCentre(int i, float t)
+{
+    vec4 o = uBodyOrbit[i];
+    float rb   = o.x;
+    float incl = o.w;
+
+    float Om  = sqrt(uM) / (rb * sqrt(rb) + uA * sqrt(uM));
+    float ang = o.z + Om * t;
+
+    float ci = cos(incl), si = sin(incl);
+    float x = rb * cos(ang);
+    float y = rb * sin(ang);
+    return vec3(x, y * ci, y * si);
+}
+
+// Redshift factor for an emitter on a circular orbit of radius r in the
+// equatorial plane. Same expression the disk uses.
+float circularOrbitShift(float r, float E, float L)
+{
+    float sM = sqrt(uM);
+    float Om = sM / (r * sqrt(r) + uA * sM);
+    float g_tt = -(1.0 - 2.0 * uM / r);
+    float g_tp = -2.0 * uM * uA / r;
+    float g_pp = r * r + uA * uA + 2.0 * uM * uA * uA / r;
+    float den  = -(g_tt + 2.0 * Om * g_tp + Om * Om * g_pp);
+    if (den <= 1e-6) return 1.0;
+    float ut = inversesqrt(den);
+    float El = ut * (E - Om * L);
+    return (El > 1e-5) ? (1.0 / El) : 0.0;
+}
+
+// Nearest intersection of segment P0->P1 with any body, as a parameter in
+// [0,1]. Returns -1.0 for a miss. `hitIndex` receives the body that was hit.
+float intersectBodies(vec3 P0, vec3 P1, float t, out int hitIndex)
+{
+    hitIndex = -1;
+    float best = 2.0;
+
+    vec3 d = P1 - P0;
+    float aa = dot(d, d);
+    if (aa < 1e-12) return -1.0;
+
+    for (int i = 0; i < MAX_BODIES; ++i) {
+        if (i >= uBodyCount) break;
+
+        vec3  C  = bodyCentre(i, t);
+        float rr = uBodyOrbit[i].y;
+
+        vec3  f  = P0 - C;
+        float bb = 2.0 * dot(f, d);
+        float cc = dot(f, f) - rr * rr;
+
+        float disc = bb * bb - 4.0 * aa * cc;
+        if (disc < 0.0) continue;
+
+        float sq = sqrt(disc);
+        float t0 = (-bb - sq) / (2.0 * aa);
+        if (t0 < 0.0) t0 = (-bb + sq) / (2.0 * aa);   // camera inside the body
+        if (t0 < 0.0 || t0 > 1.0) continue;
+
+        if (t0 < best) { best = t0; hitIndex = i; }
+    }
+    return (hitIndex >= 0) ? best : -1.0;
 }
 
 // =============================================================================
@@ -487,23 +574,79 @@ vec3 trace(vec3 camPos, vec3 dir)
         if (x.y < 0.0)      { x.y = -x.y;            x.z += PI; p.y = -p.y; }
         else if (x.y > PI)  { x.y = 2.0 * PI - x.y;  x.z += PI; p.y = -p.y; }
 
-        // Equatorial-plane crossing -> possible disk hit.
+        // ---- what did this step hit, and in what order? --------------------
+        //
+        // Two candidates: an equatorial-plane crossing (the disk) and a body
+        // sphere. Both are parameterised along the same step, so whichever has
+        // the smaller parameter is in front and must be shaded first.
+
+        float diskT = -1.0;
+        float rHit = 0.0, phHit = 0.0;
         if (uEnableDisk == 1) {
             float c0 = cos(xPrev.y);
             float c1 = cos(x.y);
             if (c0 * c1 < 0.0) {
-                float f    = c0 / (c0 - c1);
-                float rHit = mix(xPrev.x, x.x, f);
-                if (rHit > uDiskInner && rHit < uDiskOuter) {
-                    float phHit = mix(xPrev.z, x.z, f);
-                    float alpha;
-                    vec3  emission = sampleDisk(rHit, phHit, E, L, alpha);
-                    colour += transmittance * emission * alpha;
-                    transmittance *= (1.0 - alpha);
-                    if (transmittance < 0.015) break;
+                float f = c0 / (c0 - c1);
+                float rr = mix(xPrev.x, x.x, f);
+                if (rr > uDiskInner && rr < uDiskOuter) {
+                    diskT = f;
+                    rHit  = rr;
+                    phHit = mix(xPrev.z, x.z, f);
                 }
             }
         }
+
+        int   bodyIdx = -1;
+        float bodyT   = -1.0;
+        vec3  P0 = vec3(0.0), P1 = vec3(0.0);
+        if (uBodyCount > 0) {
+            P0 = blToCartesian(xPrev.x, xPrev.y, xPrev.z);
+            P1 = blToCartesian(x.x, x.y, x.z);
+            bodyT = intersectBodies(P0, P1, uTime, bodyIdx);
+        }
+
+        // Shade the nearer of the two first; the disk is semi-transparent so
+        // the ray may continue through it into a body behind.
+        bool diskFirst = (diskT >= 0.0) && (bodyT < 0.0 || diskT <= bodyT);
+
+        if (diskFirst) {
+            float alpha;
+            vec3  emission = sampleDisk(rHit, phHit, E, L, alpha);
+            colour += transmittance * emission * alpha;
+            transmittance *= (1.0 - alpha);
+            diskT = -1.0;
+        }
+
+        if (bodyIdx >= 0 && transmittance > 0.015) {
+            vec3  hitP   = mix(P0, P1, bodyT);
+            vec3  centre = bodyCentre(bodyIdx, uTime);
+            vec3  n      = normalize(hitP - centre);
+            vec3  view   = normalize(P0 - hitP);
+
+            // Self-luminous, with limb darkening so it reads as a sphere
+            // rather than a flat disc.
+            float ndv = max(dot(n, view), 0.0);
+            float limb = 0.45 + 0.55 * pow(ndv, 0.55);
+
+            vec4  bc = uBodyColour[bodyIdx];
+            float g  = (uEnableShift == 1)
+                     ? clamp(circularOrbitShift(uBodyOrbit[bodyIdx].x, E, L), 0.0, 6.0)
+                     : 1.0;
+
+            vec3 emission = bc.rgb * (bc.a * limb * g * g * g);
+            colour += transmittance * emission;
+            transmittance = 0.0;   // bodies are opaque
+            break;
+        }
+
+        if (!diskFirst && diskT >= 0.0) {
+            float alpha;
+            vec3  emission = sampleDisk(rHit, phHit, E, L, alpha);
+            colour += transmittance * emission * alpha;
+            transmittance *= (1.0 - alpha);
+        }
+
+        if (transmittance < 0.015) break;
     }
 
     if (escaped && transmittance > 0.0) {

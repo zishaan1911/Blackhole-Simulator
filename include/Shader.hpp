@@ -26,6 +26,8 @@ public:
     void set(const char* name, float v);
     void set(const char* name, float x, float y);
     void set(const char* name, float x, float y, float z);
+    // Uploads `count` vec4s from a tightly packed float array.
+    void setVec4Array(const char* name, int count, const float* values);
 
     // Searches a few sensible locations for `relativePath`.
     static std::string resolvePath(const std::string& relativePath);

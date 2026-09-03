@@ -28,6 +28,17 @@ public:
     void  setFovY(float radians) { m_fovY = radians; }
     float tanHalfFovY() const;
 
+    // Slow automatic orbit. Speed is in radians per second; negative reverses.
+    bool  autoOrbit      = true;
+    float autoOrbitSpeed = 0.06f;   // ~100 s per revolution
+    float autoOrbitMin   = 0.005f;
+    float autoOrbitMax   = 2.0f;
+
+    // Advances the automatic orbit. Returns true if the camera actually moved,
+    // so the caller knows to discard accumulated samples.
+    bool  advance(float dt);
+    void  scaleAutoOrbitSpeed(float factor);
+
     float minDistance = 2.5f;
     float maxDistance = 400.0f;
 
