@@ -1,15 +1,15 @@
 blank_issues_enabled: true
 contact_links:
   - name: How the physics is verified
-    url: https://github.com/zishaan1911/Blackhole-Simulator/blob/master/docs/verification.md
+    url: https://github.com/zishaan1911/Kerrscope/blob/master/docs/verification.md
     about: >
       Before reporting the image as wrong, check the numbers the integrator is
       held to — null-condition conservation, weak-field deflection and b_crit.
   - name: Known limitations
-    url: https://github.com/zishaan1911/Blackhole-Simulator#known-limitations
+    url: https://github.com/zishaan1911/Kerrscope#known-limitations
     about: >
       The spin cap at a/M = 0.95, the ~0.4% of pixels that exhaust the step
       budget, and the zero-thickness disk are documented, not undiscovered.
   - name: Report a security issue privately
-    url: https://github.com/zishaan1911/Blackhole-Simulator/security/advisories/new
+    url: https://github.com/zishaan1911/Kerrscope/security/advisories/new
     about: Please do not open a public issue for a vulnerability.
