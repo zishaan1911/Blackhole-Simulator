@@ -5,7 +5,7 @@ metric on the GPU. Gravitational lensing here is not a screen-space effect:
 every pixel's photon path is obtained by integrating Hamilton's equations in
 curved spacetime.
 
-![Kerr black hole, a/M = 0.85](docs/kerr_a085.png)
+![Kerr black hole at a/M = 0.85, with four orbiting bodies lensed into thin arcs above and below the shadow](docs/orbiting_bodies_lensed.png)
 
 ---
 
@@ -129,6 +129,12 @@ blackbody temperature by `g`, so the approaching side is both brighter and bluer
 Frame dragging also enters the photon paths directly through the `g^{tφ}` terms,
 which is why the shadow is visibly off-centre and flattened on one side at high
 spin.
+
+![The same scene at a = 0: a circular, centred shadow and a disk symmetric about the axis](docs/schwarzschild_a0.png)
+
+Schwarzschild, `a = 0`, for comparison with the header image at `a/M = 0.85`:
+the shadow is circular and centred on the axis, and the disk is symmetric
+across it. The orbiting bodies are switched off in this one.
 
 ---
 
