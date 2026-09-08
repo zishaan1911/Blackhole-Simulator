@@ -43,13 +43,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             xorg-dev libwayland-dev libxkbcommon-dev libgl1-mesa-dev
 
-      # FetchContent clones GLFW and GLM on every cold run. Caching _deps turns
-      # a two-minute configure into a few seconds.
-      - name: Cache fetched dependencies
-        uses: actions/cache@v4
-        with:
-          path: build/_deps
-          key: deps-${{ matrix.name }}-${{ hashFiles('CMakeLists.txt') }}
+      # There is deliberately no dependency cache here. build/_deps holds the
+      # GLFW and GLM *subbuild* trees, and each of those carries its own
+      # CMakeCache.txt full of absolute paths. Restore that into a workspace at
+      # a different path - which is exactly what happens when the repository is
+      # renamed, since the runner checks out to /home/runner/work/<repo>/<repo>
+      # - and CMake refuses the stale cache and the whole matrix fails to
+      # configure. It cost the entire build matrix to save about forty seconds.
 
       - name: Configure
         env:

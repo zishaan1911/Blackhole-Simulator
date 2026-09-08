@@ -44,6 +44,17 @@ option(KERRSCOPE_STATIC_RUNTIME
        "Link the C++ runtime statically, for a binary that runs without a redistributable"
        OFF)
 
+# This has to be set before the dependencies are declared, not on the kerr
+# target afterwards. GLFW is built from source in this same tree, and MSVC
+# refuses to link objects that disagree about the runtime library (LNK2038,
+# MT_StaticRelease against MD_DynamicRelease). Setting the variable here puts
+# every target in the build - ours and GLFW's - on the same runtime.
+if(KERRSCOPE_STATIC_RUNTIME AND MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # GLFW 3.3 predates CMAKE_MSVC_RUNTIME_LIBRARY and uses its own switch.
+    set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
+endif()
+
 include(FetchContent)
 
 # ---------------------------------------------------------------------------
@@ -119,13 +130,10 @@ endif()
 # Release binaries should run on a machine that has never had a compiler on
 # it. MinGW is already static above; this covers MSVC and static libstdc++ on
 # GCC/Clang. Off by default, because a development build has no use for it.
-if(KERRSCOPE_STATIC_RUNTIME)
-    if(MSVC)
-        set_property(TARGET kerr PROPERTY
-                     MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    elseif(NOT MINGW AND NOT APPLE)
-        target_link_options(kerr PRIVATE -static-libgcc -static-libstdc++)
-    endif()
+# MSVC is handled up top, before the dependencies are declared. This is the
+# GCC/Clang half, which only concerns our own target.
+if(KERRSCOPE_STATIC_RUNTIME AND NOT MSVC AND NOT MINGW AND NOT APPLE)
+    target_link_options(kerr PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
 # Copy the shaders next to the executable for a self-contained build dir.
