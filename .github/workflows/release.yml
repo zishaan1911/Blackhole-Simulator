@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build and publish (must already exist)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  # Nothing gets published on the strength of a tag alone. If the integrator
+  # has drifted, the release does not happen.
+  verify:
+    name: Verify the physics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - run: python3 .github/scripts/check_physics.py
+
+  package:
+    name: Package (${{ matrix.target }})
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86_64
+            os: ubuntu-22.04     # oldest supported runner, for the oldest glibc
+            binary: build/kerr
+          - target: windows-x86_64
+            os: windows-latest
+            binary: build/Release/kerr.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Install GLFW build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xorg-dev libwayland-dev libxkbcommon-dev libgl1-mesa-dev
+
+      - name: Work out the version
+        id: v
+        shell: bash
+        run: |
+          ref="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "version=${ref#v}" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # KERRSCOPE_COMMIT is passed explicitly so the binary reports the tagged
+      # commit rather than whatever the checkout happened to leave HEAD at.
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          -DKERRSCOPE_STATIC_RUNTIME=ON
+          -DKERRSCOPE_COMMIT=${{ steps.v.outputs.commit }}
+
+      - name: Build
+        run: cmake --build build --config Release -j 2
+
+      # The binary is asked what it is. A release that ships a build reporting
+      # the wrong version is worse than no release.
+      - name: Check the build identity
+        shell: bash
+        run: |
+          set -e
+          out=$(${{ matrix.binary }} --version)
+          echo "$out"
+          echo "$out" | head -1 | grep -q "kerr ${{ steps.v.outputs.version }} " \
+            || { echo "binary does not report ${{ steps.v.outputs.version }}"; exit 1; }
+
+      - name: Stage the archive
+        shell: bash
+        run: |
+          set -e
+          dir="kerrscope-${{ steps.v.outputs.version }}-${{ matrix.target }}"
+          mkdir -p "dist/$dir"
+          cp "${{ matrix.binary }}" "dist/$dir/"
+          cp -r shaders "dist/$dir/shaders"
+          cp README.md CHANGELOG.md LICENSE "dist/$dir/"
+          ls -R "dist/$dir"
+
+      - name: Archive (tar.gz)
+        if: runner.os == 'Linux'
+        run: |
+          cd dist
+          tar czf "kerrscope-${{ steps.v.outputs.version }}-${{ matrix.target }}.tar.gz" \
+                  "kerrscope-${{ steps.v.outputs.version }}-${{ matrix.target }}"
+
+      - name: Archive (zip)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Set-Location dist
+          Compress-Archive -Path "kerrscope-${{ steps.v.outputs.version }}-${{ matrix.target }}" `
+                           -DestinationPath "kerrscope-${{ steps.v.outputs.version }}-${{ matrix.target }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          if-no-files-found: error
+
+  publish:
+    name: Publish the release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Pull this version's section out of the CHANGELOG
+        id: notes
+        shell: bash
+        run: |
+          ref="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${ref#v}"
+          {
+            awk -v v="$version" '
+              $0 ~ "^## \\[" v "\\]" { on = 1; next }
+              on && /^## \[/         { exit }
+              on                     { print }
+            ' CHANGELOG.md
+            echo
+            echo "---"
+            echo
+            echo '```sh'
+            echo "tar xzf kerrscope-${version}-linux-x86_64.tar.gz"
+            echo "cd kerrscope-${version}-linux-x86_64 && ./kerr"
+            echo '```'
+            echo
+            echo "Needs an OpenGL 3.3 driver. \`./kerr --version\` reports the build."
+            echo "Verify a download against \`SHA256SUMS\`."
+          } > notes.md
+          # An empty section means the CHANGELOG was not updated for this tag.
+          test -s notes.md || { echo "no CHANGELOG section for $version"; exit 1; }
+          head -40 notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Kerrscope ${{ github.event.inputs.tag || github.ref_name }}
+          body_path: notes.md
+          files: artifacts/*
+          draft: false
+          prerelease: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
