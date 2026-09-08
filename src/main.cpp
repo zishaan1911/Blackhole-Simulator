@@ -1,5 +1,6 @@
 // =============================================================================
-//  Real-time Kerr black hole ray tracer.
+//  Kerrscope - real-time Kerr black hole ray tracer.
+//  https://github.com/zishaan1911/Blackhole-Simulator
 //
 //  Controls
 //    Mouse drag ....... orbit the camera
@@ -240,8 +241,8 @@ void printControls()
 {
     std::printf(
         "\n"
-        "  Kerr black hole ray tracer\n"
-        "  --------------------------\n"
+        "  Kerrscope - one geodesic per pixel\n"
+        "  ----------------------------------\n"
         "  Mouse drag   orbit camera            Space   pause / resume\n"
         "  Scroll       zoom                    R       reset\n"
         "  W / S        zoom in / out           T / G   sim speed up / down\n"
@@ -275,7 +276,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Kerr Black Hole", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Kerrscope", nullptr, nullptr);
     if (!window) {
         std::fprintf(stderr,
                      "Failed to create an OpenGL 3.3 core context.\n"
@@ -412,7 +413,7 @@ int main()
             const double fps = (fpsAccum > 0.0) ? (fpsFrames / fpsAccum) : 0.0;
             char title[320];
             std::snprintf(title, sizeof(title),
-                          "Kerr Black Hole  |  a/M %.2f  M %.2f  |  r %.1f M  |  t %.1f M  "
+                          "Kerrscope  |  a/M %.2f  M %.2f  |  r %.1f M  |  t %.1f M  "
                           "|  speed %.2fx%s  |  %dx%d  steps %d  spp %d  |  %.0f FPS",
                           app.hole.spin, app.hole.mass,
                           app.camera.distance() / app.hole.mass,

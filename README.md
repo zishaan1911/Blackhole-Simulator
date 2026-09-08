@@ -1,4 +1,19 @@
-# Real-time Kerr black hole ray tracer
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/logo-on-dark.svg">
+  <img alt="Kerrscope — one geodesic per pixel" src="brand/logo-on-light.svg" width="372">
+</picture>
+
+**Real-time Kerr black hole ray tracer**
+
+[![CI](https://github.com/zishaan1911/Blackhole-Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/zishaan1911/Blackhole-Simulator/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/zishaan1911/Blackhole-Simulator?color=FF8A0D&label=release)](https://github.com/zishaan1911/Blackhole-Simulator/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-8E9298.svg)](LICENSE)
+[![OpenGL](https://img.shields.io/badge/OpenGL-3.3%20core-8E9298.svg)](#build)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-8E9298.svg)](#build)
+
+</div>
 
 A live OpenGL 3.3 renderer that integrates null geodesics through the Kerr
 metric on the GPU. Gravitational lensing here is not a screen-space effect:
@@ -364,7 +379,12 @@ src/        main.cpp  BlackHole.cpp  Camera.cpp  Renderer.cpp
             Simulation.cpp  Shader.cpp  PngWriter.cpp  glad_min.cpp
 shaders/    kerr_raytrace.frag  accumulate.frag  present.frag  fullscreen.vert
 docs/       verification.md  and the images in this file
+brand/      mark.svg  logo-on-dark.svg  logo-on-light.svg  social-card.png
 ```
+
+`brand/README.md` explains where the palette comes from — it is `blackbody(T)`
+evaluated at the temperatures in the disk-colour table above, not a colour
+scheme picked separately.
 
 `glad_min.{h,cpp}` is a small self-contained loader for the ~44 GL entry points
 used here. It exposes the same `gladLoadGLLoader` entry point as GLAD, so you can
