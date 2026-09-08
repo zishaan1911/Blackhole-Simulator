@@ -1,0 +1,72 @@
+name: Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'site/**'
+      - 'brand/**'
+      - 'docs/*.png'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# Pages itself has to be switched on once, by hand, in
+# Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+# A workflow cannot enable it for you; if this job fails with "Get Pages site
+# failed", that setting is the reason, not this file.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The page is one self-contained HTML file. Everything else it needs is
+      # already in the repository, so "building" is copying four assets next to
+      # it - no generator, no node_modules, no lockfile to keep current.
+      - name: Assemble the site
+        run: |
+          set -e
+          mkdir -p _site
+          cp site/index.html                  _site/
+          cp brand/mark.svg                   _site/
+          cp brand/social-card.png            _site/
+          cp docs/orbiting_bodies_lensed.png  _site/
+          cp docs/schwarzschild_a0.png        _site/
+          ls -la _site
+
+      - name: Check that every local reference resolves
+        run: |
+          set -e
+          missing=0
+          for ref in $(grep -oE '(src|href)="[^"#:]+"' _site/index.html \
+                       | sed -E 's/.*="([^"]+)"/\1/' | sort -u); do
+            if [ ! -e "_site/$ref" ]; then
+              echo "missing: $ref"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || { echo "the page references files that are not in _site"; exit 1; }
+          echo "all local references resolve"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
