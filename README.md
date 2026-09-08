@@ -26,6 +26,34 @@ curved spacetime.
 
 ---
 
+## Install
+
+Download the [latest release](https://github.com/zishaan1911/Blackhole-Simulator/releases/latest).
+Each archive holds the binary, its shaders, and the licence — there is nothing
+to install and no runtime to fetch.
+
+```sh
+tar xzf kerrscope-1.1.0-linux-x86_64.tar.gz
+cd kerrscope-1.1.0-linux-x86_64
+./kerr
+```
+
+On Windows, unzip and run `kerr.exe`. Verify a download against the
+`SHA256SUMS` file published with the release.
+
+Every binary can say what it is, which is the first thing a bug report needs:
+
+```console
+$ kerr --version
+kerr 1.1.0 (8c4ba3a, 2026-09-08)
+Kerrscope - real-time Kerr black hole ray tracer.  MIT.  https://github.com/zishaan1911/Blackhole-Simulator
+```
+
+`kerr --help` prints the same line followed by the controls. Everything else is
+a key press; there is nothing to configure on the command line.
+
+---
+
 ## Build
 
 Requires a C++17 compiler, CMake 3.16+, and a GPU/driver with **OpenGL 3.3**.
@@ -62,6 +90,10 @@ compiler — that is an environment problem, not a project one.
 
 macOS caps at OpenGL 4.1, which is above 3.3, so it should work there too,
 though it is untested.
+
+For a binary that runs on a machine without a compiler on it, add
+`-DKERRSCOPE_STATIC_RUNTIME=ON`; that is what the published releases are built
+with. Version history is in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
