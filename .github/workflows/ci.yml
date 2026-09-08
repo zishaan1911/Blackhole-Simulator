@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags-ignore: ['**']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux GCC
+            os: ubuntu-latest
+          - name: Linux Clang
+            os: ubuntu-latest
+            cxx: clang++
+            cc: clang
+          - name: Windows MSVC
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # GLFW is built from source when the system has no package, which is the
+      # path most people hit. It needs the X11 and Wayland headers.
+      - name: Install GLFW build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xorg-dev libwayland-dev libxkbcommon-dev libgl1-mesa-dev
+
+      # FetchContent clones GLFW and GLM on every cold run. Caching _deps turns
+      # a two-minute configure into a few seconds.
+      - name: Cache fetched dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: deps-${{ matrix.name }}-${{ hashFiles('CMakeLists.txt') }}
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j 2
+
+      # The renderer needs an OpenGL 3.3 context and GitHub runners have no GPU,
+      # so this is the most a hosted runner can assert: the binary exists, and
+      # the shaders were copied next to it.
+      - name: Check the build output
+        shell: bash
+        run: |
+          set -e
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            bin=build/Release/kerr.exe
+            shaders=build/Release/shaders
+          else
+            bin=build/kerr
+            shaders=build/shaders
+          fi
+          test -f "$bin"        || { echo "no binary at $bin"; exit 1; }
+          test -d "$shaders"    || { echo "shaders were not copied to $shaders"; exit 1; }
+          for s in kerr_raytrace.frag accumulate.frag present.frag fullscreen.vert; do
+            test -f "$shaders/$s" || { echo "missing shader $s"; exit 1; }
+          done
+          echo "binary and all four shaders present"
+
+  shaders:
+    name: Shader syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Shaders are compiled at runtime, so a syntax error in one of them is
+      # invisible until someone launches the program on a machine with a GPU.
+      # glslang parses GLSL 330 without a driver, which moves that failure here.
+      - name: Install glslang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends glslang-tools
+
+      - name: Validate every shader
+        run: |
+          set -e
+          for f in shaders/*.vert shaders/*.frag; do
+            echo "--- $f"
+            glslangValidator "$f"
+          done
+          echo "all shaders parse as GLSL 330 core"
+
+  physics:
+    name: Physics regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The two harnesses in docs/ reproduce the shader's equations in double
+      # precision. This asserts the tolerances docs/verification.md claims, so a
+      # change that quietly moves the shadow fails here rather than shipping.
+      - name: Check the integrator against analytic results
+        run: python3 .github/scripts/check_physics.py
