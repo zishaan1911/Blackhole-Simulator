@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kerrscope</title>
+<meta name="description" content="A real-time Kerr black hole ray tracer. Every pixel's photon path is integrated through curved spacetime on the GPU, and the shadow it produces is checked against the analytic Kerr value to one part in ten million.">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<meta property="og:title" content="Kerrscope">
+<meta property="og:description" content="Real-time Kerr black hole ray tracer. One geodesic per pixel.">
+<meta property="og:image" content="social-card.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..600;1,6..72,300..400&family=IBM+Plex+Mono:wght@400;500&family=Poppins:wght@300&display=swap">
+<style>
+/* ---------------------------------------------------------------------------
+   Kerrscope
+
+   This page commits to a single dark theme rather than following the viewer's
+   setting. That is a decision, not an omission: every plate on it is a frame
+   out of the renderer, all of them are near-black, and a light ground would
+   put a white page around a black hole. Every colour below is painted
+   explicitly so the page holds whatever ground it is composited over.
+
+   Palette is the brand palette, which is blackbody(T) at the temperatures the
+   renderer works in. See brand/README.md.
+   --------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  --void:   #05060A;   /* the shadow */
+  --panel:  #0B0D13;   /* raised instrument surfaces */
+  --rule:   #1D202A;   /* hairlines, warmed very slightly toward the accent */
+  --ember:  #FF8A0D;   /* blackbody 2000 K - the disk's peak temperature */
+  --tan:    #FFBD87;   /* blackbody 3400 K - annotation leaders */
+  --photon: #F4F2ED;   /* blackbody 6500 K, cooled a shade for body text */
+  --muted:  #8A8E98;
+
+  --measure: 63ch;
+  --display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "DejaVu Sans Mono", Consolas, monospace;
+  --wordmark: "Poppins", "Century Gothic", "Avenir Next", ui-sans-serif, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--photon);
+  font-family: var(--display);
+  font-size: 18px;
+  line-height: 1.62;
+  font-weight: 300;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--tan); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--ember); }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 2px; }
+
+/* --- layout ---------------------------------------------------------------- */
+
+.wrap { width: min(100% - 2.5rem, 68rem); margin-inline: auto; }
+.column { max-width: var(--measure); }
+
+section { padding-block: clamp(3.5rem, 8vw, 6rem); }
+section + section { border-top: 1px solid var(--rule); }
+
+.stack { display: flex; flex-direction: column; gap: 1.15rem; }
+.stack > * { margin: 0; }
+
+/* --- type ------------------------------------------------------------------ */
+
+h1, h2, h3 { font-weight: 300; text-wrap: balance; margin: 0; letter-spacing: -0.012em; }
+h2 { font-size: clamp(1.75rem, 3.6vw, 2.5rem); line-height: 1.14; }
+h3 { font-size: 1.22rem; line-height: 1.3; }
+
+p { margin: 0; }
+p + p { margin-top: 1.05rem; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin: 0 0 0.9rem;
+}
+
+.lede { font-size: clamp(1.1rem, 2.1vw, 1.32rem); line-height: 1.55; color: var(--photon); }
+.muted { color: var(--muted); }
+.small { font-size: 0.92rem; line-height: 1.55; }
+
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+code { color: var(--tan); }
+
+/* --- hero ------------------------------------------------------------------ */
+
+.hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); padding-bottom: clamp(2rem, 5vw, 3rem); }
+
+.lockup { display: flex; align-items: center; gap: 1.05rem; margin-bottom: 2.1rem; }
+.lockup img { width: 56px; height: 56px; display: block; }
+.lockup .name {
+  font-family: var(--wordmark);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 4.6vw, 2.6rem);
+  letter-spacing: 0.19em;
+  line-height: 1;
+  color: var(--photon);
+}
+
+.tagline {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--ember);
+  margin: 0 0 1.5rem;
+}
+
+.hero h1 { font-size: clamp(2rem, 5.2vw, 3.15rem); line-height: 1.1; margin-bottom: 1.3rem; }
+.hero h1 em { font-style: italic; color: var(--tan); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+
+.btn {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  padding: 0.72rem 1.25rem;
+  border: 1px solid var(--rule);
+  color: var(--photon);
+  background: var(--panel);
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+.btn:hover { border-color: var(--ember); color: var(--photon); }
+.btn--primary { background: var(--ember); border-color: var(--ember); color: #160C02; font-weight: 500; }
+.btn--primary:hover { background: var(--tan); border-color: var(--tan); color: #160C02; }
+
+/* --- plates ---------------------------------------------------------------- */
+
+.plate { position: relative; margin-top: 2.8rem; }
+.plate img { width: 100%; height: auto; display: block; }
+
+.plate figcaption {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: 0.85rem;
+  display: flex;
+  gap: 0.7rem;
+}
+.plate figcaption .fig { color: var(--ember); flex: none; }
+
+.annotations {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: none;
+}
+@media (min-width: 800px) { .annotations { display: block; } }
+.annotations line, .annotations circle { stroke: var(--tan); fill: none; stroke-width: 1; opacity: 0.85; }
+.annotations text {
+  font-family: var(--mono);
+  font-size: 11px;
+  fill: var(--photon);
+  letter-spacing: 0.02em;
+  paint-order: stroke;
+  stroke: rgba(5, 6, 10, 0.85);
+  stroke-width: 3.5px;
+}
+.annotations text.value { fill: var(--tan); }
+
+/* --- instrument panels ----------------------------------------------------- */
+
+.panel {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  padding: clamp(1.1rem, 3vw, 1.6rem);
+  overflow-x: auto;
+}
+
+table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 0.82rem; }
+caption {
+  caption-side: top;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 0.9rem;
+}
+th, td { text-align: left; padding: 0.6rem 1.1rem 0.6rem 0; white-space: nowrap; }
+th {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--rule);
+}
+td { border-bottom: 1px solid rgba(29, 32, 42, 0.6); font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: none; }
+td.num { text-align: right; padding-right: 1.6rem; }
+th.num { text-align: right; padding-right: 1.6rem; }
+tr.key td { color: var(--photon); }
+tr.key td:first-child { box-shadow: inset 2px 0 0 var(--ember); padding-left: 0.85rem; }
+tr.key td.pass { color: var(--ember); }
+td.pass { color: var(--ember); }
+
+/* --- the per-pixel sequence ------------------------------------------------ */
+
+ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+ol.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr;
+  gap: 0 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--rule);
+}
+ol.steps li:last-child { border-bottom: 1px solid var(--rule); }
+ol.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ember);
+  padding-top: 0.36rem;
+}
+ol.steps p { font-size: 0.98rem; }
+
+pre {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: var(--tan);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 1.15rem 1.3rem;
+  margin: 0;
+  overflow-x: auto;
+}
+pre .c { color: var(--muted); }
+
+/* --- spin comparison ------------------------------------------------------- */
+
+.compare { margin-top: 2rem; }
+.frames { position: relative; }
+.frames img { width: 100%; height: auto; display: block; }
+.frames img.under { position: absolute; inset: 0; }
+.frames img.over { position: relative; transition: opacity 320ms ease; }
+.switch { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--rule); width: max-content; }
+.switch button {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 0.55rem 1.05rem;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
+}
+.switch button + button { border-left: 1px solid var(--rule); }
+.switch button[aria-pressed="true"] { background: var(--ember); color: #160C02; font-weight: 500; }
+.switch button:hover:not([aria-pressed="true"]) { color: var(--photon); }
+
+/* --- limitations ----------------------------------------------------------- */
+
+dl.limits { margin: 0; display: grid; gap: 1.4rem; }
+dl.limits dt { font-family: var(--mono); font-size: 0.82rem; color: var(--ember); margin-bottom: 0.3rem; }
+dl.limits dd { margin: 0; font-size: 0.98rem; color: var(--muted); }
+
+/* --- get it ---------------------------------------------------------------- */
+
+.cols { display: grid; gap: 2.4rem; align-items: start; }
+@media (min-width: 780px) { .cols { grid-template-columns: 1fr 1fr; gap: 3rem; } }
+
+footer {
+  border-top: 1px solid var(--rule);
+  padding-block: 2.5rem 3.5rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+footer .row { display: flex; flex-wrap: wrap; gap: 0.6rem 1.6rem; align-items: baseline; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<main>
+
+  <!-- ===================================================================== -->
+  <section class="hero wrap">
+    <div class="lockup">
+      <img src="mark.svg" alt="" width="56" height="56">
+      <span class="name">KERRSCOPE</span>
+    </div>
+
+    <div class="column">
+      <p class="tagline">one geodesic per pixel</p>
+      <h1>Gravitational lensing here is not a screen-space effect. It is an <em>integration</em>.</h1>
+      <p class="lede muted">
+        A real-time Kerr black hole ray tracer. For every pixel on the screen the
+        shader integrates Hamilton's equations backwards through curved spacetime
+        until the photon lands on the disk, on an orbiting body, on the sky, or
+        inside the hole. The shadow and the photon ring are not drawn. They fall
+        out of the integration.
+      </p>
+      <div class="actions">
+        <a class="btn btn--primary" href="https://github.com/zishaan1911/Blackhole-Simulator/releases/latest">Download the latest release</a>
+        <a class="btn" href="https://github.com/zishaan1911/Blackhole-Simulator">Source on GitHub</a>
+        <a class="btn" href="#verification">How it is checked</a>
+      </div>
+    </div>
+
+    <figure class="plate">
+      <img src="orbiting_bodies_lensed.png"
+           alt="A Kerr black hole at spin a/M = 0.85. The accretion disk wraps over and under the shadow, brighter on the approaching side, and two orbiting bodies appear as thin white arcs above and below."
+           width="800" height="450">
+      <svg class="annotations" viewBox="0 0 800 450" aria-hidden="true" preserveAspectRatio="none">
+        <!-- Annotated the way a figure in a paper is annotated. Every label
+             names something the integrator produced, not something drawn on. -->
+        <line x1="60" y1="44" x2="316" y2="62"></line>
+        <circle cx="320" cy="62" r="4"></circle>
+        <text x="60" y="34">orbiting body, lensed into an arc</text>
+
+        <line x1="612" y1="66" x2="497" y2="150"></line>
+        <circle cx="494" cy="153" r="4"></circle>
+        <text x="612" y="56">photon ring</text>
+        <text class="value" x="612" y="72">b_crit = 3.054337 M</text>
+
+        <line x1="70" y1="392" x2="330" y2="256"></line>
+        <circle cx="334" cy="254" r="4"></circle>
+        <text x="66" y="366">shadow &#8212; rays that reach the capture</text>
+        <text x="66" y="382">surface contribute nothing</text>
+      </svg>
+      <figcaption>
+        <span class="fig">Fig. 1</span>
+        <span>Spin <code>a/M = 0.85</code>, disk outer edge <code>20 M</code>, camera at
+        <code>26 M</code>. Rendered by the program, not illustrated. The bright side is
+        the approaching side: specific intensity scales as <code>g³</code>.</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== -->
+  <section class="wrap">
+    <div class="column stack">
+      <p class="eyebrow">What happens to one pixel</p>
+      <h2>Five steps, about 163 of them per ray</h2>
+      <p class="muted">
+        Units are geometrised, <code>G = c = 1</code>, so every length below is in
+        units of <code>GM/c²</code>. The order matters — this is the sequence the
+        shader runs, per pixel, per frame.
+      </p>
+    </div>
+
+    <div class="column" style="margin-top: 2rem;">
+      <ol class="steps">
+        <li><p>Convert the camera position from pseudo-Cartesian coordinates to Boyer-Lindquist <code>(r, θ, φ)</code>.</p></li>
+        <li><p>Build the photon four-momentum in the local orthonormal frame of a zero angular momentum observer, normalised to unit local energy.</p></li>
+        <li><p>Lower indices with the covariant Kerr metric to get the conserved <code>E = −p_t</code> and <code>L = p_φ</code>.</p></li>
+        <li><p>Integrate Hamilton's equations with RK4, using analytic derivatives of the inverse metric. <code>t</code> and <code>φ</code> are cyclic, so only five quantities are carried.</p></li>
+        <li><p>Accumulate emission at every equatorial crossing between the ISCO and the disk's outer edge; sample a procedural sky if the photon escapes to <code>r = 1000 M</code>.</p></li>
+      </ol>
+    </div>
+
+    <div class="column" style="margin-top: 2rem;">
+      <pre>dx&#8305;/dλ =  &#8706;H/&#8706;p&#7522;        H = ½ g^{μν} p_μ p_ν   <span class="c">( = 0 for a photon )</span>
+dp&#7522;/dλ = &#8722;&#8706;H/&#8706;x&#8305;</pre>
+      <p class="small muted" style="margin-top: 1.1rem;">
+        The emitting gas orbits prograde at <code>Ω = √M / (r^{3/2} + a√M)</code>. Because
+        the photon was normalised to unit energy in the camera frame, the whole
+        redshift factor collapses to <code>g = 1 / [ u^t (E − Ω L) ]</code> — gravitational
+        redshift, transverse and longitudinal Doppler and frame dragging in one
+        number.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <section class="wrap" id="verification">
+    <div class="column stack">
+      <p class="eyebrow">Measurement</p>
+      <h2>The integrator is held to analytic results, not to taste</h2>
+      <p class="muted">
+        This is a physics calculation that happens to draw pictures, so it is
+        checked the way a calculation is checked. A double-precision harness runs
+        the same equations as the shader and compares them against values that
+        are known in closed form. Every number below is asserted in CI on every
+        push.
+      </p>
+    </div>
+
+    <div class="panel" style="margin-top: 2.2rem;">
+      <table>
+        <caption>Critical impact parameter, camera at r = 26 M, production step policy</caption>
+        <thead>
+          <tr>
+            <th>Spin a/M</th>
+            <th class="num">Numeric b</th>
+            <th class="num">Analytic b</th>
+            <th class="num">Rel. error</th>
+            <th class="num">p99 steps</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>0.00</td><td class="num">5.196153</td><td class="num">5.196152</td><td class="num pass">8.2e−08</td><td class="num">126</td></tr>
+          <tr><td>0.50</td><td class="num">4.096267</td><td class="num">4.096267</td><td class="num pass">1.4e−07</td><td class="num">131</td></tr>
+          <tr class="key"><td>0.85</td><td class="num">3.054337</td><td class="num">3.054336</td><td class="num pass">1.6e−07</td><td class="num">149</td></tr>
+          <tr><td>0.95</td><td class="num">2.582213</td><td class="num">2.582212</td><td class="num pass">2.0e−07</td><td class="num">163</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="column" style="margin-top: 1.6rem;">
+      <p class="small muted">
+        <code>b_crit</code> is the strongest single check in the project, because it
+        <em>is</em> the angular radius of the shadow. It only comes out right if the
+        metric, the ZAMO tetrad, the constants of motion and the integrator are
+        all correct at the same time. The row for <code>a/M = 0.85</code> is the
+        measurement labelled in Fig. 1.
+      </p>
+    </div>
+
+    <div class="panel" style="margin-top: 2rem;">
+      <table>
+        <caption>Other checks</caption>
+        <tbody>
+          <tr><td>Null condition <span class="mono">H = 0</span> along a ray, <span class="mono">a/M = 0.9</span></td><td class="num pass">max |H| = 2e−06</td></tr>
+          <tr><td>Weak-field deflection vs <span class="mono">4M/b + 15πM²/4b²</span></td><td class="num pass">1.0e−04 at b = 320 M, falling as 1/b²</td></tr>
+          <tr><td>Frame dragging, radially aimed photon</td><td class="num pass">+2.15986 rad at a/M = 0.9; exactly 0 at a = 0</td></tr>
+          <tr><td>Fragment-shader port vs the original compute shader</td><td class="num pass">0 of 360000 pixels differ</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="column" style="margin-top: 1.6rem;">
+      <p class="small muted">
+        Numbers are not the whole story, and the project says so. Cross-compiling
+        the shader to a CPU renderer and looking at the output caught two bugs
+        every numerical test had passed: a dark seam along the projected spin
+        axis from the <code>sin θ → 0</code> coordinate singularity, and stars visible
+        <em>inside</em> the shadow, where RK4 stages stepped to <code>r &lt; r₊</code>, <code>Δ</code>
+        changed sign and photons were ejected back out.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <section class="wrap">
+    <div class="column stack">
+      <p class="eyebrow">Spin</p>
+      <h2>Frame dragging is visible, and it is in the photon paths</h2>
+      <p class="muted">
+        Frame dragging enters through the <code>g^{tφ}</code> terms of the metric, so it
+        bends the light itself rather than tinting what is behind it. Switch the
+        spin and watch the shadow go off-centre and flatten on the approaching
+        side.
+      </p>
+    </div>
+
+    <div class="compare">
+      <div class="switch" role="group" aria-label="Spin">
+        <button type="button" id="spin-0" aria-pressed="false">a/M = 0.00</button>
+        <button type="button" id="spin-85" aria-pressed="true">a/M = 0.85</button>
+      </div>
+      <figure class="plate" style="margin-top: 0;">
+        <div class="frames">
+          <img class="under" src="schwarzschild_a0.png"
+               alt="The same scene at zero spin: the shadow is circular and centred, and the disk is symmetric about the axis.">
+          <img class="over" id="frame-085" src="orbiting_bodies_lensed.png"
+               alt="The same scene at spin a/M = 0.85: the shadow is off-centre and flattened on the brighter, approaching side.">
+        </div>
+        <figcaption>
+          <span class="fig">Fig. 2</span>
+          <span id="fig2-caption">Spin <code>a/M = 0.85</code>. The orbiting bodies are on in this frame and off in the <code>a = 0</code> one, so ignore the white arcs and watch the shadow.</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <section class="wrap">
+    <div class="cols">
+      <div class="stack">
+        <p class="eyebrow">Constraint</p>
+        <h2>It runs on a laptop from 2012</h2>
+        <p class="muted">
+          The geodesic integration is in a fragment shader rather than a compute
+          shader. Nothing here needs compute support, storage buffers or any
+          extension: OpenGL 3.3 core is the floor, and it is a deliberate one.
+        </p>
+        <p class="muted">
+          Cost is roughly <span class="mono">pixels × steps</span>. The renderer traces at a
+          fraction of the window resolution and then converges: each frame jitters
+          the ray on a Halton sequence and averages into a float buffer as an exact
+          running mean, so a still camera reaches a clean antialiased frame in about
+          a second. That suits slow hardware far better than blurring would — the
+          photon ring is a couple of pixels wide, and blur destroys exactly the
+          feature you came to look at.
+        </p>
+      </div>
+
+      <div class="panel">
+        <table>
+          <caption>Work per frame, 1280 × 720 window</caption>
+          <thead>
+            <tr><th>Render scale</th><th class="num">Traced pixels</th><th class="num">Per frame</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0.15</td><td class="num">192 × 108</td><td class="num">~0.9 GFLOP</td></tr>
+            <tr class="key"><td>0.25 <span class="muted">(default)</span></td><td class="num">320 × 180</td><td class="num">~2.4 GFLOP</td></tr>
+            <tr><td>0.35</td><td class="num">448 × 251</td><td class="num">~4.6 GFLOP</td></tr>
+            <tr><td>0.50</td><td class="num">640 × 360</td><td class="num">~9.4 GFLOP</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <section class="wrap">
+    <div class="column stack">
+      <p class="eyebrow">What it does not do</p>
+      <h2>The limits, stated rather than discovered</h2>
+    </div>
+
+    <div class="column" style="margin-top: 2rem;">
+      <dl class="limits">
+        <div>
+          <dt>Spin is capped at a/M = 0.95</dt>
+          <dd>
+            Near extremal, the outer horizon, the inner horizon and the prograde
+            photon orbit crowd into a shell a few hundredths of <code>M</code> thick.
+            Boyer-Lindquist ray tracing in 32-bit floats stops being trustworthy
+            there: photons leak back out and speckle the shadow, measured at 3.6%
+            of shadow pixels at <code>a/M = 0.998</code> against 0% at 0.85. Fixing it
+            properly needs horizon-penetrating coordinates.
+          </dd>
+        </div>
+        <div>
+          <dt>About 0.4% of pixels exhaust the step budget</dt>
+          <dd>
+            They render black. Raising the cap from 320 to 700 changes nothing, so
+            those rays are genuinely trapped near the photon shell rather than
+            merely slow. The visible effect is a thin dark arc exactly where the
+            photon ring is brightest — cosmetic, but it is there.
+          </dd>
+        </div>
+        <div>
+          <dt>The disk is a zero-thickness sheet</dt>
+          <dd>
+            A Novikov-Thorne-like radial profile with procedural turbulence. It is
+            not a radiative-transfer solution, and the turbulence is noise rather
+            than magnetohydrodynamics. Light travel time is not accounted for in
+            its rotation.
+          </dd>
+        </div>
+        <div>
+          <dt>The disk colour is an artistic choice</dt>
+          <dd>
+            <code>diskTemperature</code> defaults to 2000 K, and the documentation says
+            plainly that this is a choice. A physically realistic accretion flow at
+            10⁴–10⁷ K renders as a white smear with no visible colour structure,
+            because the normalised Planckian locus is almost colourless above about
+            5000 K. The physics is identical either way; only the colour lookup
+            changes.
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <section class="wrap" id="get">
+    <div class="cols">
+      <div class="stack">
+        <p class="eyebrow">Get it</p>
+        <h2>Download a build, or compile it in two commands</h2>
+        <p class="muted">
+          Releases carry a Linux binary and a Windows <code>.exe</code>, each with the
+          shaders alongside. Unpack and run — there is nothing to install.
+        </p>
+        <div class="actions">
+          <a class="btn btn--primary" href="https://github.com/zishaan1911/Blackhole-Simulator/releases/latest">Releases</a>
+          <a class="btn" href="https://github.com/zishaan1911/Blackhole-Simulator/blob/master/docs/verification.md">Verification notes</a>
+        </div>
+      </div>
+
+      <div class="stack">
+        <pre><span class="c"># needs a C++17 compiler, CMake 3.16+
+# and an OpenGL 3.3 driver</span>
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./build/kerr</pre>
+        <p class="small muted">
+          GLFW and GLM are taken from the system if they are there and fetched if
+          they are not. There is no third dependency: the GL loader is 44 entry
+          points, vendored, and the PNG writer emits DEFLATE stored blocks rather
+          than linking zlib.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div class="row">
+    <span>Kerrscope &#183; one geodesic per pixel</span>
+    <span>MIT licensed</span>
+    <a href="https://github.com/zishaan1911/Blackhole-Simulator">github.com/zishaan1911/Blackhole-Simulator</a>
+  </div>
+</footer>
+
+<script>
+// The spin switch crossfades the two plates. Both frames are in the DOM from
+// the start, so the page is complete before this runs and stays usable if it
+// never does.
+(function () {
+  var over = document.getElementById('frame-085');
+  var caption = document.getElementById('fig2-caption');
+  var buttons = {
+    '0': document.getElementById('spin-0'),
+    '85': document.getElementById('spin-85')
+  };
+  if (!over || !caption) return;
+
+  var captions = {
+    '0': 'Schwarzschild, <code>a = 0</code>. The shadow is circular and centred on the axis, and the disk is symmetric across it. The orbiting bodies are off in this frame.',
+    '85': 'Spin <code>a/M = 0.85</code>. The orbiting bodies are on in this frame and off in the <code>a = 0</code> one, so ignore the white arcs and watch the shadow.'
+  };
+
+  function show(which) {
+    over.style.opacity = which === '85' ? '1' : '0';
+    caption.innerHTML = captions[which];
+    buttons['0'].setAttribute('aria-pressed', String(which === '0'));
+    buttons['85'].setAttribute('aria-pressed', String(which === '85'));
+  }
+
+  buttons['0'].addEventListener('click', function () { show('0'); });
+  buttons['85'].addEventListener('click', function () { show('85'); });
+})();
+</script>
+
+</body>
+</html>
