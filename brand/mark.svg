@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="ks-mark-title">
+  <title id="ks-mark-title">Kerrscope</title>
+  <!--
+    The mark is the picture the renderer produces, reduced to what survives at
+    16 px: a shadow, and the photon ring around it.
+
+    Two things are deliberate and both are physics, not decoration.
+
+    - The ring is brighter on the right. The emitting gas orbits prograde, so
+      the approaching side is beamed and blue-shifted; specific intensity goes
+      as g^3, which is why one side of every render is visibly hotter.
+    - The shadow sits slightly left of the ring's centre. Frame dragging enters
+      the photon paths through the g^{t-phi} terms, and at high spin the shadow
+      is measurably off-centre and flattened on the approaching side.
+
+    Colours are blackbody(T) at the temperatures the renderer actually uses.
+    See brand/README.md.
+  -->
+  <defs>
+    <linearGradient id="ks-ring" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0.00" stop-color="#8C4A08"/>
+      <stop offset="0.34" stop-color="#FF8A0D"/>
+      <stop offset="0.70" stop-color="#FFBD87"/>
+      <stop offset="1.00" stop-color="#FFFFFA"/>
+    </linearGradient>
+    <radialGradient id="ks-halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.66" stop-color="#FF8A0D" stop-opacity="0"/>
+      <stop offset="0.84" stop-color="#FF8A0D" stop-opacity="0.20"/>
+      <stop offset="1.00" stop-color="#FF8A0D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="32" cy="32" r="31.5" fill="url(#ks-halo)"/>
+  <circle cx="31.3" cy="32" r="18.4" fill="#05060A"/>
+  <circle cx="32" cy="32" r="19.5" fill="none" stroke="url(#ks-ring)" stroke-width="2.7"/>
+</svg>
