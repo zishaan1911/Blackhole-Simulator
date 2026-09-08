@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 372 96" width="372" height="96" role="img" aria-labelledby="ks-logo-dark-title">
+  <title id="ks-logo-dark-title">Kerrscope — one geodesic per pixel</title>
+  <!-- Horizontal lockup for dark backgrounds. See brand/README.md for clear
+       space, minimum size and the colour rationale. -->
+  <defs>
+    <linearGradient id="ksd-ring" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0.00" stop-color="#8C4A08"/>
+      <stop offset="0.34" stop-color="#FF8A0D"/>
+      <stop offset="0.70" stop-color="#FFBD87"/>
+      <stop offset="1.00" stop-color="#FFFFFA"/>
+    </linearGradient>
+    <radialGradient id="ksd-halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.66" stop-color="#FF8A0D" stop-opacity="0"/>
+      <stop offset="0.84" stop-color="#FF8A0D" stop-opacity="0.26"/>
+      <stop offset="1.00" stop-color="#FF8A0D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(8,16)">
+    <circle cx="32" cy="32" r="31.5" fill="url(#ksd-halo)"/>
+    <circle cx="31.3" cy="32" r="18.4" fill="#05060A"/>
+    <circle cx="32" cy="32" r="19.5" fill="none" stroke="url(#ksd-ring)" stroke-width="2.7"/>
+  </g>
+
+  <text x="92" y="52"
+        font-family="Poppins, 'Century Gothic', 'Avenir Next', 'Segoe UI', ui-sans-serif, system-ui, sans-serif"
+        font-size="30" font-weight="300" letter-spacing="4.2" fill="#F2F0EC">KERRSCOPE</text>
+  <text x="94" y="72"
+        font-family="ui-monospace, 'DejaVu Sans Mono', 'SF Mono', Consolas, monospace"
+        font-size="11.5" letter-spacing="0.9" fill="#8E9298">one geodesic per pixel</text>
+</svg>
