@@ -1,6 +1,6 @@
 // =============================================================================
 //  Kerrscope - real-time Kerr black hole ray tracer.
-//  https://github.com/zishaan1911/Blackhole-Simulator
+//  https://github.com/zishaan1911/Kerrscope
 //
 //  Controls
 //    Mouse drag ....... orbit the camera

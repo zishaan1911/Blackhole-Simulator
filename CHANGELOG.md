@@ -38,7 +38,7 @@ build you are running.
   without needing a GPU; and a physics job that asserts the tolerances in
   `docs/verification.md` — thirteen checks, `b_crit` among them.
 - **A landing page** at
-  [zishaan1911.github.io/Blackhole-Simulator](https://zishaan1911.github.io/Blackhole-Simulator/),
+  [zishaan1911.github.io/Kerrscope](https://zishaan1911.github.io/Kerrscope/),
   deployed from `site/` on push.
 - **A brand**: the project is called Kerrscope, with a mark, two lockups and a
   social card in `brand/`. The palette is `blackbody(T)` at the temperatures the
@@ -55,6 +55,13 @@ build you are running.
 
 - The window title, the startup banner and the HUD line now say **Kerrscope**.
   The CMake project is renamed to match.
+- **The repository is now `zishaan1911/Kerrscope`.** GitHub redirects the old
+  `Blackhole-Simulator` URLs and existing clones keep working, but the Pages
+  site does not redirect: it moved from
+  `zishaan1911.github.io/Blackhole-Simulator/` to
+  `zishaan1911.github.io/Kerrscope/`. Every link in the README, the CHANGELOG,
+  the landing page, the issue templates and the `--version` banner points at
+  the new name.
 - The README opens with the lockup, a one-line description and status badges,
   and links to the landing page and the verification notes.
 
@@ -93,6 +100,6 @@ First tagged version: the renderer itself.
 - Verification harnesses in `docs/`, agreeing with the analytic Kerr `b_crit` to
   2×10⁻⁷ or better at every spin tested.
 
-[Unreleased]: https://github.com/zishaan1911/Blackhole-Simulator/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/zishaan1911/Blackhole-Simulator/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/zishaan1911/Blackhole-Simulator/releases/tag/v1.0.0
+[Unreleased]: https://github.com/zishaan1911/Kerrscope/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/zishaan1911/Kerrscope/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/zishaan1911/Kerrscope/releases/tag/v1.0.0

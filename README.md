@@ -7,13 +7,13 @@
 
 **Real-time Kerr black hole ray tracer**
 
-[![CI](https://github.com/zishaan1911/Blackhole-Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/zishaan1911/Blackhole-Simulator/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/zishaan1911/Blackhole-Simulator?color=FF8A0D&label=release)](https://github.com/zishaan1911/Blackhole-Simulator/releases/latest)
+[![CI](https://github.com/zishaan1911/Kerrscope/actions/workflows/ci.yml/badge.svg)](https://github.com/zishaan1911/Kerrscope/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/zishaan1911/Kerrscope?color=FF8A0D&label=release)](https://github.com/zishaan1911/Kerrscope/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-8E9298.svg)](LICENSE)
 [![OpenGL](https://img.shields.io/badge/OpenGL-3.3%20core-8E9298.svg)](#build)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-8E9298.svg)](#build)
 
-**[zishaan1911.github.io/Blackhole-Simulator](https://zishaan1911.github.io/Blackhole-Simulator/)**
+**[zishaan1911.github.io/Kerrscope](https://zishaan1911.github.io/Kerrscope/)**
 
 </div>
 
@@ -28,7 +28,7 @@ curved spacetime.
 
 ## Install
 
-Download the [latest release](https://github.com/zishaan1911/Blackhole-Simulator/releases/latest).
+Download the [latest release](https://github.com/zishaan1911/Kerrscope/releases/latest).
 Each archive holds the binary, its shaders, and the licence — there is nothing
 to install and no runtime to fetch.
 
@@ -46,7 +46,7 @@ Every binary can say what it is, which is the first thing a bug report needs:
 ```console
 $ kerr --version
 kerr 1.1.0 (8c4ba3a, 2026-09-08)
-Kerrscope - real-time Kerr black hole ray tracer.  MIT.  https://github.com/zishaan1911/Blackhole-Simulator
+Kerrscope - real-time Kerr black hole ray tracer.  MIT.  https://github.com/zishaan1911/Kerrscope
 ```
 
 `kerr --help` prints the same line followed by the controls. Everything else is
