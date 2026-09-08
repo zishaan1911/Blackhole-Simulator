@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Kerrscope LANGUAGES C CXX)
+project(Kerrscope VERSION 1.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +8,41 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
+
+# ---------------------------------------------------------------------------
+# Build identity. Every binary can say what it is, so a bug report can name a
+# build rather than "the latest one I think".
+#
+# The commit is resolved at configure time, so it goes stale if you keep
+# building after new commits without re-running cmake. That is a fair trade for
+# not shelling out to git on every compile; CI passes KERRSCOPE_COMMIT
+# explicitly, and a build from a source tarball with no .git reports "unknown".
+# ---------------------------------------------------------------------------
+if(NOT DEFINED KERRSCOPE_COMMIT)
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE KERRSCOPE_COMMIT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET)
+    endif()
+endif()
+if(NOT KERRSCOPE_COMMIT)
+    set(KERRSCOPE_COMMIT "unknown")
+endif()
+
+string(TIMESTAMP KERRSCOPE_DATE "%Y-%m-%d" UTC)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/Version.hpp"
+    @ONLY)
+
+option(KERRSCOPE_STATIC_RUNTIME
+       "Link the C++ runtime statically, for a binary that runs without a redistributable"
+       OFF)
 
 include(FetchContent)
 
@@ -56,7 +91,9 @@ add_executable(kerr
     src/Bodies.cpp
 )
 
-target_include_directories(kerr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(kerr PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 # Absolute fallback path so the binary finds its shaders no matter where it is
 # launched from.
@@ -77,6 +114,18 @@ endif()
 
 if(MINGW)
     target_link_options(kerr PRIVATE -static-libgcc -static-libstdc++)
+endif()
+
+# Release binaries should run on a machine that has never had a compiler on
+# it. MinGW is already static above; this covers MSVC and static libstdc++ on
+# GCC/Clang. Off by default, because a development build has no use for it.
+if(KERRSCOPE_STATIC_RUNTIME)
+    if(MSVC)
+        set_property(TARGET kerr PROPERTY
+                     MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    elseif(NOT MINGW AND NOT APPLE)
+        target_link_options(kerr PRIVATE -static-libgcc -static-libstdc++)
+    endif()
 endif()
 
 # Copy the shaders next to the executable for a self-contained build dir.

@@ -32,6 +32,7 @@
 #include "Renderer.hpp"
 #include "PngWriter.hpp"
 #include "Simulation.hpp"
+#include "Version.hpp"
 #include "glad_min.h"
 
 #define GLFW_INCLUDE_NONE
@@ -237,6 +238,13 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
     app->renderer.resize(width, height);
 }
 
+void printVersion()
+{
+    std::printf("kerr %s (%s, %s)\n", KERRSCOPE_VERSION, KERRSCOPE_COMMIT, KERRSCOPE_DATE);
+    std::printf("Kerrscope - real-time Kerr black hole ray tracer.  MIT.  %s\n",
+                KERRSCOPE_URL);
+}
+
 void printControls()
 {
     std::printf(
@@ -259,8 +267,28 @@ void printControls()
 
 }  // namespace
 
-int main()
+int main(int argc, char** argv)
 {
+    // The only arguments are the two every command-line program is expected to
+    // answer. Everything the renderer can be told is a key press; there is no
+    // configuration to pass in.
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "--version" || arg == "-v") {
+            printVersion();
+            return EXIT_SUCCESS;
+        }
+        if (arg == "--help" || arg == "-h") {
+            printVersion();
+            printControls();
+            return EXIT_SUCCESS;
+        }
+        std::fprintf(stderr, "kerr: unrecognised option '%s'\nTry 'kerr --help'.\n", argv[i]);
+        return EXIT_FAILURE;
+    }
+
+    printVersion();
+
     if (!glfwInit()) {
         std::fprintf(stderr, "Failed to initialise GLFW\n");
         return EXIT_FAILURE;
