@@ -13,6 +13,8 @@
 [![OpenGL](https://img.shields.io/badge/OpenGL-3.3%20core-8E9298.svg)](#build)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-8E9298.svg)](#build)
 
+**[zishaan1911.github.io/Blackhole-Simulator](https://zishaan1911.github.io/Blackhole-Simulator/)**
+
 </div>
 
 A live OpenGL 3.3 renderer that integrates null geodesics through the Kerr
