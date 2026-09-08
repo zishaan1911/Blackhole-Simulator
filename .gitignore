@@ -1,11 +1,17 @@
 build/
 build-*/
 cmake-build-*/
+dist/
 .idea/
 .vs/
+.vscode/
+.cache/
+compile_commands.json
+CMakeUserPresets.json
 *.o
 *.obj
 *.exe
 *.pdb
 *.ilk
 kerr_*.png
+.DS_Store

@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a physical effect, a control, or a change to the renderer.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two constraints shape what fits here:
+
+        - **OpenGL 3.3, no compute shaders.** This is deliberate — it keeps the
+          project running on hardware from 2012.
+        - **Lensing is integrated, not composited.** Anything drawn in the scene
+          has to be intersected along the photon's geodesic, the way the
+          orbiting bodies are.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should it do
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: >
+        What it makes visible or measurable that is not visible now. If it is a
+        physical effect, name it.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Shader / integrator
+        - Disk and emission model
+        - Camera and controls
+        - Screenshots and output
+        - Build, CI or packaging
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: cost
+    attributes:
+      label: Expected cost per pixel
+      description: >
+        Optional, but it decides most of these. Cost is roughly
+        `pixels x steps`; anything added inside the RK4 loop is paid ~163 times
+        per ray at the default settings.

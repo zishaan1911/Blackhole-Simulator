@@ -1,0 +1,19 @@
+# Normalise line endings so a Windows checkout does not rewrite every file.
+* text=auto eol=lf
+
+*.png  binary
+*.jpg  binary
+*.ico  binary
+
+# Keep the shaders readable in diffs and let GitHub colour them.
+*.frag linguist-language=GLSL
+*.vert linguist-language=GLSL
+
+# glad_min is a vendored GL loader; it should not skew the language stats.
+src/glad_min.cpp   linguist-vendored
+include/glad_min.h linguist-vendored
+
+# Files that only matter to contributors do not belong in the source archive.
+.github/       export-ignore
+.editorconfig  export-ignore
+.gitattributes export-ignore
