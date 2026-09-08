@@ -1,0 +1,78 @@
+name: Bug report
+description: Something renders wrong, crashes, or will not build.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Wrong output and no output are both bugs. If the image looks wrong,
+        a screenshot (`P`) is worth more than a description.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, and what you got instead of what you expected.
+      placeholder: |
+        Raised the spin to a/M = 0.95 with E and the shadow filled with speckle.
+    validations:
+      required: true
+
+  - type: textarea
+    id: hud
+    attributes:
+      label: Window title line
+      description: >
+        The window title is the HUD — spin, mass, camera radius, sim time,
+        speed, trace resolution, step count, samples and FPS. Paste it, or the
+        console output if the program never opened a window.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `kerr --version`, or the commit you built from.
+      placeholder: kerr 1.1.0 (a1b2c3d, 2026-09-08)
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver
+      description: >
+        The first two lines the program prints are `GL renderer` and
+        `GL version`. Paste them.
+      placeholder: "GL renderer : Intel(R) HD Graphics 4000 / GL version : 4.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - Windows
+        - macOS
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: How you got it
+      options:
+        - Downloaded a release binary
+        - Built from source
+    validations:
+      required: true
+
+  - type: textarea
+    id: build-log
+    attributes:
+      label: Build output
+      description: Only if it failed to build. The first error, not the last.
+      render: text
